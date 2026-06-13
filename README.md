@@ -1,6 +1,6 @@
-# QuickDraft
+# AQuickDraft
 
-A legal agreement builder for revenue sharing, profit sharing, commission-based deals, and NDAs.
+Agreement templates for game developers, technical folks, and college students. Revenue sharing, profit sharing, commission deals, and NDAs — $5 per document.
 
 ## Stack
 
@@ -91,8 +91,9 @@ Edge Function secrets (via `supabase secrets set`):
 ## Supabase Setup (Payments + Share Links)
 
 1. Complete **Supabase Auth Setup** above first
-2. Deploy Edge Functions:
+2. Link your project and deploy Edge Functions:
    ```bash
+   supabase link --project-ref YOUR_PROJECT_REF
    supabase functions deploy create-document-checkout --no-verify-jwt
    supabase functions deploy verify-document-payment --no-verify-jwt
    supabase functions deploy stripe-webhook --no-verify-jwt
@@ -105,4 +106,8 @@ Without Supabase configured, drafting works locally and payment gating is disabl
 
 - `npm run dev` — start dev server
 - `npm run build` — production build
+- `npm run build:seo` — production build + sitemap + prerender for SEO
 - `npm run preview` — preview production build
+- `npm run check:supabase` — validate Supabase auth configuration
+
+See [docs/SEO_DEPLOY.md](docs/SEO_DEPLOY.md) for post-deploy SEO verification.

@@ -2,6 +2,7 @@ import { FileText } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
+import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 
 export default function PayForDocumentModal({ open, onOpenChange, action = 'download', onPay, loading }) {
   const actionLabel = action === 'share' ? 'share this agreement' : 'download this PDF'
@@ -23,6 +24,8 @@ export default function PayForDocumentModal({ open, onOpenChange, action = 'down
             {' '}Sign in to sync purchases across devices.
           </DialogDescription>
         </DialogHeader>
+
+        <LegalDisclaimer variant="banner" />
 
         <div className="rounded-lg border bg-muted/30 p-4 text-center my-2">
           <p className="text-3xl font-bold text-primary">$5</p>

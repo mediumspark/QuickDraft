@@ -1,4 +1,5 @@
 import { buildAgreementText, buildAgreementSummary, getAgreementTypeLabel } from '@/utils/agreementUtils'
+import { LEGAL_DISCLAIMER_TEXT } from '@/components/LegalDisclaimer'
 import SignaturePad from './SignaturePad'
 
 function renderLine(line, index) {
@@ -72,6 +73,7 @@ function AgreementSummaryPreview({ agreement }) {
       <div className="relative z-0 space-y-4">
         <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           <strong>Summary preview.</strong> Full legal text is hidden until you pay $5 to download or share.
+          {' '}{LEGAL_DISCLAIMER_TEXT.short}
         </div>
 
         <dl>
@@ -205,8 +207,7 @@ export default function AgreementPreview({
 
       <div className="border-t bg-muted/20 px-6 py-4">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          <strong>Disclaimer:</strong> This document is generated for informational purposes only and does not
-          constitute legal advice. Consult a qualified attorney before signing any agreement.
+          <strong>Template notice:</strong> {LEGAL_DISCLAIMER_TEXT.full}
         </p>
       </div>
     </div>

@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `QuickDraft Credits (${credits})`,
+              name: `AQuickDraft Credits (${credits})`,
               description: `${credits} credit${credits > 1 ? 's' : ''} for PDF download or share link`,
             },
             unit_amount: CREDIT_PRICE_CENTS,

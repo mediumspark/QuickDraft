@@ -68,9 +68,9 @@ export default function Navbar({ variant = 'landing' }) {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-            <span className="text-primary-foreground font-bold text-sm">QD</span>
+            <span className="text-primary-foreground font-bold text-xs">AQD</span>
           </div>
-          <span className="font-semibold text-lg">QuickDraft</span>
+          <span className="font-semibold text-lg">AQuickDraft</span>
         </Link>
 
         {variant === 'landing' && (
@@ -79,6 +79,7 @@ export default function Navbar({ variant = 'landing' }) {
             <a href="#agreements" className="text-muted-foreground hover:text-foreground transition-colors">Agreements</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
             <Link to="/guide" className="text-muted-foreground hover:text-foreground transition-colors">Guide</Link>
+            <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
             <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">About</Link>
             <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
           </nav>

@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `QuickDraft — ${actionLabel}`,
+              name: `AQuickDraft — ${actionLabel}`,
               description: `Pay-per-document: ${actionLabel} for one agreement`,
             },
             unit_amount: DOCUMENT_PRICE_CENTS,

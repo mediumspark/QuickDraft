@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { loadAgreementById } from '@/services/supabase'
 import { downloadPdf } from '@/utils/pdfUtils'
+import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 export default function ViewAgreement() {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
@@ -56,7 +57,7 @@ export default function ViewAgreement() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-40">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <Link to="/" className="font-semibold">QuickDraft</Link>
+          <Link to="/" className="font-semibold">AQuickDraft</Link>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -73,6 +74,8 @@ export default function ViewAgreement() {
         <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
           Read-only shared agreement. Fill in your name and sign below.
         </div>
+
+        <LegalDisclaimer variant="banner" className="mb-4" />
 
         <PartyNameInputs parties={agreement.parties} onChange={handlePartiesChange} />
 

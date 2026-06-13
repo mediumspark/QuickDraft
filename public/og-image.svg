@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#faf8f5"/>
+  <rect x="80" y="80" width="1040" height="470" rx="24" fill="#ffffff" stroke="#e5e0d8" stroke-width="2"/>
+  <rect x="120" y="130" width="72" height="72" rx="12" fill="#2d9e7a"/>
+  <text x="156" y="178" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">AQD</text>
+  <text x="220" y="165" fill="#1a1a1a" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="700">AQuickDraft</text>
+  <text x="220" y="210" fill="#6b6560" font-family="Inter, Arial, sans-serif" font-size="24">Agreement templates for devs &amp; students</text>
+  <text x="120" y="290" fill="#1a1a1a" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="600">Revenue sharing · Profit sharing · Commission · NDA</text>
+  <text x="120" y="340" fill="#6b6560" font-family="Inter, Arial, sans-serif" font-size="22">Draft free · Preview summaries · $5 to download</text>
+  <text x="120" y="400" fill="#1a5c45" font-family="Inter, Arial, sans-serif" font-size="20">Templates only  not created by lawyers</text>
+  <text x="120" y="490" fill="#6b6560" font-family="Inter, Arial, sans-serif" font-size="18">www.aquickdraft.com</text>
+</svg>

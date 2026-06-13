@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 
 const steps = [
@@ -10,8 +11,8 @@ const steps = [
   { num: '3', title: 'Set financial terms', desc: 'Configure percentages, payment frequency, thresholds, or commission rates.' },
   { num: '4', title: 'Add duration & dispute clauses', desc: 'Set start/end dates, auto-renewal, termination notice, and governing law.' },
   { num: '5', title: 'Customize with extra clauses', desc: 'Add free-text provisions for non-compete, IP ownership, or any special terms.' },
-  { num: '6', title: 'Preview & sign', desc: 'Review the live document preview and draw signatures on the canvas.' },
-  { num: '7', title: 'Pay & download', desc: 'Pay $5 to download your PDF or $5 to generate a share link — no account needed.' },
+  { num: '6', title: 'Preview carefully', desc: 'Review the live document preview. Read every clause — these are templates, not lawyer-drafted agreements.' },
+  { num: '7', title: 'Pay & download', desc: 'Pay $5 to download your PDF or $5 to generate a share link. Present to your partners only after you have read it through.' },
 ]
 
 export default function Guide() {
@@ -20,10 +21,12 @@ export default function Guide() {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-16 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-4xl font-bold mb-4">How to Use QuickDraft</h1>
-          <p className="text-muted-foreground mb-10">
-            Follow these steps to create a professional agreement in under 10 minutes.
+          <h1 className="text-4xl font-bold mb-4">How to Use AQuickDraft</h1>
+          <p className="text-muted-foreground mb-6">
+            Follow these steps to create a partnership or revenue-sharing template in under 10 minutes.
+            Built for game developers, technical collaborators, and students who need something fast and affordable.
           </p>
+          <LegalDisclaimer variant="banner" className="mb-10" />
 
           <div className="space-y-6">
             {steps.map((step, i) => (
@@ -45,11 +48,17 @@ export default function Guide() {
             ))}
           </div>
 
-          <div className="mt-12 rounded-lg border bg-accent/50 p-6 text-center">
-            <p className="font-medium mb-4">Ready to draft your first agreement?</p>
-            <Link to="/builder">
-              <Button size="lg">Open the Builder</Button>
-            </Link>
+          <div className="mt-12 rounded-lg border bg-accent/50 p-6">
+            <p className="font-medium mb-4 text-center">Ready to draft your first agreement?</p>
+            <LegalDisclaimer variant="compact" className="mb-4" />
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/builder">
+                <Button size="lg">Open the Builder</Button>
+              </Link>
+              <Link to="/templates/revenue-sharing">
+                <Button variant="outline" size="lg">Revenue sharing template</Button>
+              </Link>
+            </div>
           </div>
         </motion.div>
       </main>

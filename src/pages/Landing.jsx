@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Blocks, Eye, FileDown, Share2, TrendingUp, PieChart, HandCoins,
+  Gamepad2, Code2, GraduationCap,
 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import LandingAuthActions from '@/components/LandingAuthActions'
 import Footer from '@/components/Footer'
+import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -15,6 +17,24 @@ const fadeIn = {
   transition: { duration: 0.5 },
 }
 
+const audiences = [
+  {
+    icon: Gamepad2,
+    title: 'Game developers',
+    desc: 'Split revenue with artists, musicians, contractors, or co-devs on your indie game or jam project.',
+  },
+  {
+    icon: Code2,
+    title: 'Technical folks',
+    desc: 'Document side-project splits, freelance collaborations, and contractor deals without a legal bill.',
+  },
+  {
+    icon: GraduationCap,
+    title: 'College students',
+    desc: 'Turn a class project, club startup, or dorm-room idea into a clear agreement on a student budget.',
+  },
+]
+
 const features = [
   { icon: Blocks, title: 'Modular Clause Builder', desc: 'Stack parties, financial terms, duration, and custom clauses like building blocks.' },
   { icon: Eye, title: 'Live Document Preview', desc: 'See your agreement update in real time with professional serif formatting.' },
@@ -23,9 +43,9 @@ const features = [
 ]
 
 const agreementTypes = [
-  { icon: TrendingUp, title: 'Revenue Sharing', desc: 'Split gross or net revenue on a defined schedule.' },
-  { icon: PieChart, title: 'Profit Sharing', desc: 'Distribute profits after expenses among partners.' },
-  { icon: HandCoins, title: 'Commission-Based', desc: 'Pay percentage commissions on qualifying transactions.' },
+  { icon: TrendingUp, title: 'Revenue Sharing', desc: 'Split gross or net revenue on a defined schedule — great for game sales, DLC, or merch.', href: '/templates/revenue-sharing' },
+  { icon: PieChart, title: 'Profit Sharing', desc: 'Distribute profits after expenses among partners on a side project or startup.', href: '/templates/profit-sharing' },
+  { icon: HandCoins, title: 'Commission-Based', desc: 'Pay percentage commissions on qualifying sales, referrals, or contract work.', href: '/templates/commission' },
 ]
 
 export default function Landing() {
@@ -38,16 +58,20 @@ export default function Landing() {
         <section className="container mx-auto px-4 py-20 md:py-28 text-center">
           <motion.div {...fadeIn}>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight max-w-4xl mx-auto leading-tight">
-              Draft revenue &amp; profit-sharing agreements in minutes
+              Quick agreement templates for devs, builders &amp; students
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              QuickDraft helps founders and partners create professional legal agreements
-              without the hourly legal fees. Build, preview, sign, and share — all in one place.
+              AQuickDraft helps game developers, technical folks, and college students
+              draft revenue-sharing and partnership agreements fast — for $5 per document,
+              not hundreds in legal fees.
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Drafting and summary previews are free. Pay $5 per document to download or share.
+            <p className="mt-2 text-sm text-muted-foreground max-w-xl mx-auto">
+              Drafting and summary previews are free. Pay $5 to download or share.
               Sign in with Google to save drafts across devices.
             </p>
+            <div className="mt-4 max-w-2xl mx-auto">
+              <LegalDisclaimer variant="banner" />
+            </div>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/builder">
                 <Button size="lg" className="w-full sm:w-auto">Start Drafting — Free</Button>
@@ -58,6 +82,37 @@ export default function Landing() {
             </div>
             <LandingAuthActions className="mt-4" />
           </motion.div>
+        </section>
+
+        {/* Who it's for */}
+        <section id="audience" className="py-20 border-y bg-muted/20">
+          <div className="container mx-auto px-4">
+            <motion.div {...fadeIn} className="text-center mb-12">
+              <h2 className="text-3xl font-bold">Built for people who move fast</h2>
+              <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+                Whether you are shipping a game, collaborating on a side project, or formalizing
+                a student venture — get a clear template agreement without the lawyer price tag.
+              </p>
+            </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              {audiences.map((a, i) => (
+                <motion.div
+                  key={a.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="rounded-lg border bg-card p-6 text-center"
+                >
+                  <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-4">
+                    <a.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-lg">{a.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-2">{a.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </section>
 
         {/* Features */}
@@ -96,8 +151,8 @@ export default function Landing() {
         <section id="agreements" className="py-20">
           <div className="container mx-auto px-4">
             <motion.div {...fadeIn} className="text-center mb-12">
-              <h2 className="text-3xl font-bold">Agreement types we support</h2>
-              <p className="text-muted-foreground mt-2">Plus NDAs and fully custom clauses</p>
+              <h2 className="text-3xl font-bold">Agreement templates we support</h2>
+              <p className="text-muted-foreground mt-2">Plus NDAs and fully custom clauses — all templates, not lawyer-drafted documents</p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {agreementTypes.map((a, i) => (
@@ -107,16 +162,26 @@ export default function Landing() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="rounded-lg border p-6 text-center hover:border-primary/50 transition-colors"
                 >
-                  <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-4">
-                    <a.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-semibold text-lg">{a.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-2">{a.desc}</p>
+                  <Link
+                    to={a.href}
+                    className="block rounded-lg border p-6 text-center hover:border-primary/50 transition-colors h-full"
+                  >
+                    <div className="rounded-full bg-primary/10 p-3 w-fit mx-auto mb-4">
+                      <a.icon className="h-6 w-6 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg">{a.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-2">{a.desc}</p>
+                    <p className="text-sm text-primary mt-3 font-medium">View template →</p>
+                  </Link>
                 </motion.div>
               ))}
             </div>
+            <p className="text-center mt-6">
+              <Link to="/templates/nda" className="text-sm text-primary hover:underline font-medium">
+                Also available: NDA template for collaborators →
+              </Link>
+            </p>
           </div>
         </section>
 
@@ -124,19 +189,25 @@ export default function Landing() {
         <section id="pricing" className="bg-muted/30 py-20">
           <div className="container mx-auto px-4 text-center">
             <motion.div {...fadeIn}>
-              <h2 className="text-3xl font-bold">Simple pay-as-you-go pricing</h2>
-              <p className="text-muted-foreground mt-2 mb-10">No subscriptions. Pay only when you download or share.</p>
-              <div className="inline-block rounded-xl border bg-card p-8 shadow-sm max-w-sm">
-                <p className="text-5xl font-bold text-primary">$5</p>
-                <p className="text-muted-foreground mt-1">per document</p>
-                <ul className="mt-6 space-y-2 text-sm text-left">
+              <h2 className="text-3xl font-bold">Cheap enough for student budgets</h2>
+              <p className="text-muted-foreground mt-2 mb-10">No subscriptions. $5 per document — pay only when you download or share.</p>
+              <div className="inline-block rounded-xl border bg-card p-8 shadow-sm max-w-sm text-left">
+                <p className="text-5xl font-bold text-primary text-center">$5</p>
+                <p className="text-muted-foreground mt-1 text-center">per document</p>
+                <ul className="mt-6 space-y-2 text-sm">
                   <li>✓ $5 = PDF download for one agreement</li>
                   <li>✓ $5 = shareable read-only link</li>
                   <li>✓ Free drafting &amp; summary previews</li>
                   <li>✓ Sign in with Google to save drafts</li>
                 </ul>
-                <Link to="/builder" className="block mt-6">
+                <div className="mt-4">
+                  <LegalDisclaimer variant="compact" />
+                </div>
+                <Link to="/pricing" className="block mt-6">
                   <Button className="w-full">Get Started</Button>
+                </Link>
+                <Link to="/pricing" className="block mt-2 text-center text-sm text-primary hover:underline">
+                  View full pricing details
                 </Link>
               </div>
             </motion.div>

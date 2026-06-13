@@ -27,7 +27,7 @@ function loadEnv() {
 
 const env = loadEnv()
 
-console.log('QuickDraft Supabase configuration check\n')
+console.log('AQuickDraft Supabase configuration check\n')
 
 if (!env) {
   console.log('✗ No .env file found')
@@ -84,6 +84,26 @@ try {
 }
 
 const displaySiteUrl = siteUrl || 'https://www.aquickdraft.com'
+
+console.log('\nChecking payment edge functions...')
+
+try {
+  const preflight = await fetch(`${url}/functions/v1/create-document-checkout`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: displaySiteUrl || 'https://www.aquickdraft.com',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type',
+    },
+  })
+  check(
+    'create-document-checkout deployed',
+    preflight.status !== 404,
+    'Run: supabase link --project-ref YOUR_REF && supabase functions deploy create-document-checkout --no-verify-jwt'
+  )
+} catch (err) {
+  check('Edge function reachable', false, err.message)
+}
 
 console.log('\nNext steps:')
 console.log('1. Run supabase/schema.sql in your Supabase SQL Editor')

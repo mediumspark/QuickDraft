@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { useToast } from '@/components/ui/toast'
 
 export default function Contact() {
@@ -28,9 +29,10 @@ export default function Contact() {
       <main className="flex-1 container mx-auto px-4 py-16 max-w-lg">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-4xl font-bold mb-2">Contact Us</h1>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-muted-foreground mb-4">
             Have a question or feedback? We'd love to hear from you.
           </p>
+          <LegalDisclaimer variant="compact" className="mb-8" />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">

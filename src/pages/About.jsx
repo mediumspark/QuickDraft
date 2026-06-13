@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 
 export default function About() {
   return (
@@ -8,31 +9,41 @@ export default function About() {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-16 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-4xl font-bold mb-6">About QuickDraft</h1>
+          <h1 className="text-4xl font-bold mb-6">About AQuickDraft</h1>
           <div className="prose prose-neutral space-y-4 text-muted-foreground">
             <p>
-              QuickDraft was born from a simple frustration: drafting partnership agreements
-              shouldn't require expensive legal consultations for every early-stage deal.
+              AQuickDraft was built for game developers, technical folks, and college students
+              who need to formalize a partnership quickly — without paying hundreds of dollars
+              for a basic revenue-sharing or commission agreement.
             </p>
             <p>
-              Our mission is to democratize access to professional agreement drafting tools.
-              Whether you're splitting revenue with a co-founder, setting up a commission
-              structure with a sales partner, or protecting confidential information with an NDA,
-              QuickDraft gives you the building blocks to create clear, comprehensive documents.
+              Whether you are splitting game revenue with an artist, documenting a side-project
+              equity split with a co-founder, or putting a class startup agreement on paper,
+              AQuickDraft gives you editable templates to get started.
             </p>
-            <h2 className="text-2xl font-semibold text-foreground mt-8">Our Story</h2>
-            <p>
-              Founded in 2024, QuickDraft started as an internal tool for a startup accelerator.
-              Founders were spending thousands on basic revenue-sharing agreements before they
-              even had product-market fit. We built QuickDraft to solve that problem — and
-              opened it to everyone.
-            </p>
-            <h2 className="text-2xl font-semibold text-foreground mt-8">What We Believe</h2>
+            <LegalDisclaimer variant="banner" />
+
+            <h2 className="text-2xl font-semibold text-foreground mt-8">Who we serve</h2>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Legal clarity shouldn't be a luxury</li>
-              <li>Agreements should be living documents, not static PDFs</li>
+              <li><strong>Game developers</strong> — revenue splits with contractors, composers, or co-devs</li>
+              <li><strong>Technical folks</strong> — freelance collaborations, open-source side projects, contractor deals</li>
+              <li><strong>College students</strong> — class projects, club ventures, and dorm-room startups on a budget</li>
+            </ul>
+
+            <h2 className="text-2xl font-semibold text-foreground mt-8">Templates, not legal services</h2>
+            <p>
+              AQuickDraft provides agreement <strong>templates</strong> only. Our documents are not crafted,
+              reviewed, or created by lawyers. They are starting points you fill in and customize.
+              You should always read through your agreement carefully before presenting it to partners,
+              investors, or anyone else.
+            </p>
+
+            <h2 className="text-2xl font-semibold text-foreground mt-8">What we believe</h2>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>Clear agreements help creative and technical collaborations succeed</li>
+              <li>Students and indie devs deserve affordable tools</li>
               <li>Transparency builds better partnerships</li>
-              <li>Always consult a lawyer for high-stakes deals</li>
+              <li>Templates are a starting point — not a replacement for a lawyer on important deals</li>
             </ul>
           </div>
         </motion.div>

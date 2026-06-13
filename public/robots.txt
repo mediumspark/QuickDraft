@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /builder
+Disallow: /account
+Disallow: /view/
+
+Sitemap: https://www.aquickdraft.com/sitemap.xml
