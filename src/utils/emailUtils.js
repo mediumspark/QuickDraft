@@ -15,7 +15,7 @@ async function sendViaResend(to, subject, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'QuickDraft <notifications@quickdraft.app>',
+      from: 'QuickDraft <notifications@aquickdraft.com>',
       to: [to],
       subject,
       text: body,

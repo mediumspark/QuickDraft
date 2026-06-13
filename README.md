@@ -23,6 +23,7 @@ npm run dev
 
 | Variable | Description |
 |---|---|
+| `VITE_SITE_URL` | Production app URL (e.g. `https://www.aquickdraft.com`) — used for Google OAuth redirects |
 | `VITE_SUPABASE_URL` | Supabase project URL (Settings → API) |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon **public** key (Settings → API) |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
@@ -31,6 +32,7 @@ Edge Function secrets (via `supabase secrets set`):
 
 | Secret | Description |
 |---|---|
+| `SITE_URL` | Production app URL (same as `VITE_SITE_URL`) |
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
@@ -45,6 +47,7 @@ Edge Function secrets (via `supabase secrets set`):
 
 3. **Add to `.env`** in the project root:
    ```
+   VITE_SITE_URL=https://www.aquickdraft.com
    VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
    VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    ```
@@ -52,25 +55,30 @@ Edge Function secrets (via `supabase secrets set`):
 4. **Run the database schema** — paste [`supabase/schema.sql`](supabase/schema.sql) into the **SQL Editor** and run it.
 
 5. **Configure Auth URLs** in **Authentication → URL Configuration**:
-   - **Site URL:** `http://localhost:5173`
-   - **Redirect URLs:** `http://localhost:5173/**`
+   - **Site URL:** `https://www.aquickdraft.com` (your production URL)
+   - **Redirect URLs:** `https://www.aquickdraft.com/**`
 
 6. **Set up Google OAuth** in [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
    - Create an **OAuth 2.0 Client ID** (Web application)
-   - **Authorized JavaScript origins:** `http://localhost:5173` (and your production URL)
+   - **Authorized JavaScript origins:** `https://www.aquickdraft.com`
    - **Authorized redirect URI:** `https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback`
 
 7. **Enable Google** in Supabase **Authentication → Providers → Google**:
    - Paste the Google **Client ID** and **Client Secret**
    - Save
 
-8. **Verify setup:**
+8. **Set the edge function site URL:**
+   ```bash
+   supabase secrets set SITE_URL=https://www.aquickdraft.com
+   ```
+
+9. **Verify setup:**
    ```bash
    npm run check:supabase
    npm run dev
    ```
 
-9. Open the app and click **Continue with Google** to sign in.
+9. Open your production site and click **Continue with Google** to sign in.
 
 ## Payment Model
 

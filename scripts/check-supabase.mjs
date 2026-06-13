@@ -39,6 +39,7 @@ if (!env) {
 
 const url = env.VITE_SUPABASE_URL
 const anonKey = env.VITE_SUPABASE_ANON_KEY
+const siteUrl = env.VITE_SITE_URL?.replace(/\/$/, '')
 let ok = true
 
 function check(label, pass, hint) {
@@ -48,6 +49,8 @@ function check(label, pass, hint) {
   if (!pass) ok = false
 }
 
+check('VITE_SITE_URL is set', !!siteUrl, 'Add VITE_SITE_URL=https://www.aquickdraft.com to .env')
+check('VITE_SITE_URL is not localhost', siteUrl && !siteUrl.includes('localhost'), 'Use your production URL')
 check('VITE_SUPABASE_URL is set', !!url, 'Add VITE_SUPABASE_URL to .env')
 check('VITE_SUPABASE_URL is not a placeholder', url && !url.includes('your-project'), 'Replace with your project URL')
 check('VITE_SUPABASE_ANON_KEY is set', !!anonKey, 'Add VITE_SUPABASE_ANON_KEY to .env')
@@ -80,12 +83,16 @@ try {
   check('Network connection', false, err.message)
 }
 
+const displaySiteUrl = siteUrl || 'https://www.aquickdraft.com'
+
 console.log('\nNext steps:')
 console.log('1. Run supabase/schema.sql in your Supabase SQL Editor')
-console.log('2. Set Site URL to http://localhost:5173 in Authentication → URL Configuration')
-console.log('3. Add http://localhost:5173/** to Redirect URLs')
+console.log(`2. Set Site URL to ${displaySiteUrl} in Authentication → URL Configuration`)
+console.log(`3. Add ${displaySiteUrl}/** to Redirect URLs`)
 console.log('4. Enable Google in Authentication → Providers → Google')
-console.log('5. In Google Cloud Console, add redirect URI: https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback')
-console.log('6. Restart dev server: npm run dev\n')
+console.log(`5. In Google Cloud Console, add JavaScript origin: ${displaySiteUrl}`)
+console.log('6. In Google Cloud Console, add redirect URI: https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback')
+console.log(`7. Set edge function secret: supabase secrets set SITE_URL=${displaySiteUrl}`)
+console.log('8. Rebuild and redeploy your app so VITE_SITE_URL is baked into the build\n')
 
 process.exit(ok ? 0 : 1)

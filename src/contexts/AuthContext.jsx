@@ -2,6 +2,7 @@ import * as React from 'react'
 import { supabase, isSupabaseConfigured } from '@/services/supabase'
 import { claimSessionDrafts } from '@/services/supabase'
 import { getOrCreateSessionId } from '@/utils/agreementUtils'
+import { getAuthRedirectUrl } from '@/utils/siteUrl'
 
 const AuthContext = React.createContext(null)
 
@@ -39,7 +40,7 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}${path}`,
+        redirectTo: getAuthRedirectUrl(path),
       },
     })
 

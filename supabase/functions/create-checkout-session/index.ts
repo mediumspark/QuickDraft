@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       apiVersion: '2023-10-16',
     })
 
-    const origin = req.headers.get('origin') ?? 'http://localhost:5173'
+    const origin = req.headers.get('origin') ?? Deno.env.get('SITE_URL') ?? ''
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
