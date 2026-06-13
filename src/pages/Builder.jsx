@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { ChevronDown, Share2 } from 'lucide-react'
 import { BuilderNavbar } from '@/components/Navbar'
 import AgreementTypeSelector from '@/components/clauses/AgreementTypeSelector'
@@ -14,11 +14,10 @@ import TemplateLibrary from '@/components/TemplateLibrary'
 import VersionHistory from '@/components/VersionHistory'
 import AuditLogPanel from '@/components/AuditLogPanel'
 import EmailNotifyModal from '@/components/EmailNotifyModal'
-import BuyCreditsModal from '@/components/BuyCreditsModal'
+import PayForDocumentModal from '@/components/PayForDocumentModal'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { useToast } from '@/components/ui/toast'
-import { useAuth } from '@/contexts/AuthContext'
 import {
   createEmptyDraft, DRAFT_KEY, loadFromStorage, saveToStorage, addAuditEntry,
 } from '@/utils/storageUtils'
@@ -26,12 +25,19 @@ import { getOrCreateSessionId } from '@/utils/agreementUtils'
 import { downloadPdf } from '@/utils/pdfUtils'
 import { sendSignatureEmails } from '@/utils/emailUtils'
 import { saveDraftToBackend, enableSharing } from '@/services/supabase'
-import { checkOrConsumeCredit, isPaymentsConfigured } from '@/services/payments'
+import {
+  isPaymentsConfigured,
+  isDocumentPaid,
+  markDocumentPaid,
+  ensureDocumentAccess,
+  verifyDocumentPayment,
+  getPendingPayment,
+  clearPendingPayment,
+  setPendingPayment,
+} from '@/services/payments'
 
 export default function Builder() {
   const { addToast } = useToast()
-  const { user } = useAuth()
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [draft, setDraft] = React.useState(() => {
@@ -43,15 +49,15 @@ export default function Builder() {
   const [saving, setSaving] = React.useState(false)
   const [saved, setSaved] = React.useState(false)
   const [downloading, setDownloading] = React.useState(false)
-  const [consuming, setConsuming] = React.useState(false)
+  const [paying, setPaying] = React.useState(false)
   const [sharing, setSharing] = React.useState(false)
   const [templatesOpen, setTemplatesOpen] = React.useState(false)
   const [versionsOpen, setVersionsOpen] = React.useState(false)
   const [auditOpen, setAuditOpen] = React.useState(false)
   const [emailModalOpen, setEmailModalOpen] = React.useState(false)
-  const [buyCreditsOpen, setBuyCreditsOpen] = React.useState(false)
+  const [payModalOpen, setPayModalOpen] = React.useState(false)
   const [pendingAction, setPendingAction] = React.useState('download')
-  const [creditRefreshKey, setCreditRefreshKey] = React.useState(0)
+  const [pendingWithSignatures, setPendingWithSignatures] = React.useState(false)
 
   React.useEffect(() => {
     if (!draft.sessionId) {
@@ -63,73 +69,117 @@ export default function Builder() {
     saveToStorage(DRAFT_KEY, draft)
   }, [draft])
 
-  React.useEffect(() => {
-    const payment = searchParams.get('payment')
-    if (payment === 'success') {
-      addToast('Payment successful! Credits added to your account.')
-      setCreditRefreshKey((k) => k + 1)
-      searchParams.delete('payment')
-      setSearchParams(searchParams, { replace: true })
-    } else if (payment === 'cancelled') {
-      addToast('Payment cancelled.', 'info')
-      searchParams.delete('payment')
-      setSearchParams(searchParams, { replace: true })
-    }
-  }, [searchParams, setSearchParams, addToast])
-
   const updateDraft = (patch) => setDraft((d) => ({ ...d, ...patch }))
 
-  const requireAuth = () => {
-    if (isPaymentsConfigured() && !user) {
-      navigate('/login?redirect=/builder')
-      return false
+  const getDocumentId = React.useCallback(() => {
+    return draft.id || draft.sessionId || getOrCreateSessionId()
+  }, [draft.id, draft.sessionId])
+
+  const executeDownload = React.useCallback(async (withSignatures = false) => {
+    const sigs = withSignatures ? signatures : {}
+    downloadPdf(draft, sigs)
+    addAuditEntry('pdf_download', 'PDF downloaded', withSignatures ? 'With signatures' : 'Unsigned')
+    addToast('PDF downloaded successfully')
+
+    if (withSignatures && Object.keys(signatures).length) {
+      const { sent, total } = await sendSignatureEmails(draft, signatures)
+      if (total > 0) {
+        addToast(`Signature notifications sent to ${sent}/${total} emails`)
+      }
     }
-    return true
-  }
 
-  const ensureAgreementSaved = async () => {
-    if (draft.id) return draft.id
-    const { data, error } = await saveDraftToBackend(draft)
-    if (error) throw error
-    const id = data?.id || crypto.randomUUID()
-    updateDraft({ id })
-    setSavedId(id)
-    return id
-  }
+    setEmailModalOpen(true)
+  }, [draft, signatures, addToast])
 
-  const gateAction = async (action) => {
-    if (!requireAuth()) return null
+  const executeShare = React.useCallback(async () => {
+    let current = draft
+    if (!current.id) {
+      const { data } = await saveDraftToBackend(current)
+      current = { ...current, id: data?.id || getDocumentId() }
+      setDraft((d) => ({ ...d, id: current.id }))
+    }
+    const shared = await enableSharing(current)
+    setDraft((d) => ({ ...d, shareToken: shared.shareToken, isShared: true, id: shared.id }))
+    const url = `${window.location.origin}/view/${shared.id}?token=${shared.shareToken}`
+    await navigator.clipboard.writeText(url)
+    addToast('Share link copied to clipboard')
+  }, [draft, getDocumentId, addToast])
+
+  React.useEffect(() => {
+    async function handlePaymentReturn() {
+      const payment = searchParams.get('payment')
+      const sessionId = searchParams.get('session_id')
+
+      if (payment === 'cancelled') {
+        addToast('Payment cancelled.', 'info')
+        clearPendingPayment()
+        searchParams.delete('payment')
+        setSearchParams(searchParams, { replace: true })
+        return
+      }
+
+      if (payment !== 'success' || !sessionId) return
+
+      setPaying(true)
+      try {
+        const result = await verifyDocumentPayment(sessionId)
+        if (result.paid) {
+          markDocumentPaid(result.documentId, result.action)
+          addAuditEntry('payment_purchase', `Paid for ${result.action}`, result.documentId)
+          addToast('Payment successful!')
+
+          const pending = getPendingPayment()
+          if (result.action === 'download') {
+            await executeDownload(pending?.withSignatures ?? false)
+          } else if (result.action === 'share') {
+            await executeShare()
+          }
+        }
+      } catch {
+        addToast('Could not verify payment. Please try again.', 'error')
+      } finally {
+        clearPendingPayment()
+        setPaying(false)
+        searchParams.delete('payment')
+        searchParams.delete('session_id')
+        setSearchParams(searchParams, { replace: true })
+      }
+    }
+
+    handlePaymentReturn()
+  }, [searchParams, setSearchParams, addToast, executeDownload, executeShare])
+
+  const gateAction = async (action, withSignatures = false) => {
+    const documentId = getDocumentId()
 
     if (!isPaymentsConfigured()) {
-      if (draft.id) return draft.id
-      return ensureAgreementSaved()
+      return true
     }
 
-    setConsuming(true)
+    if (isDocumentPaid(documentId, action)) {
+      return true
+    }
+
+    setPendingAction(action)
+    setPendingWithSignatures(withSignatures)
+    setPayModalOpen(true)
+    return false
+  }
+
+  const handlePayAndContinue = async () => {
+    setPaying(true)
     try {
-      const agreementId = await ensureAgreementSaved()
-      const result = await checkOrConsumeCredit(agreementId, action)
-
-      if (result.needsSave) {
-        addToast('Save your draft first', 'error')
-        return null
+      const documentId = getDocumentId()
+      setPendingPayment(documentId, pendingAction, { withSignatures: pendingWithSignatures })
+      const result = await ensureDocumentAccess(documentId, pendingAction)
+      if (result.checkoutUrl) {
+        window.location.href = result.checkoutUrl
       }
-
-      if (!result.unlocked) {
-        setPendingAction(action)
-        setBuyCreditsOpen(true)
-        addAuditEntry('payment_purchase', 'Insufficient credits', action)
-        return null
-      }
-
-      if (!result.alreadyUnlocked) {
-        addAuditEntry('credit_consumed', `Credit used for ${action}`, agreementId)
-        setCreditRefreshKey((k) => k + 1)
-      }
-
-      return agreementId
+    } catch (err) {
+      addToast(err.message || 'Failed to start checkout', 'error')
     } finally {
-      setConsuming(false)
+      setPaying(false)
+      setPayModalOpen(false)
     }
   }
 
@@ -171,22 +221,9 @@ export default function Builder() {
   const handleDownload = async (withSignatures = false) => {
     setDownloading(true)
     try {
-      const agreementId = await gateAction('download')
-      if (!agreementId && isPaymentsConfigured()) return
-
-      const sigs = withSignatures ? signatures : {}
-      downloadPdf(draft, sigs)
-      addAuditEntry('pdf_download', 'PDF downloaded', withSignatures ? 'With signatures' : 'Unsigned')
-      addToast('PDF downloaded successfully')
-
-      if (withSignatures && Object.keys(signatures).length) {
-        const { sent, total } = await sendSignatureEmails(draft, signatures)
-        if (total > 0) {
-          addToast(`Signature notifications sent to ${sent}/${total} emails`)
-        }
-      }
-
-      setEmailModalOpen(true)
+      const allowed = await gateAction('download', withSignatures)
+      if (!allowed) return
+      await executeDownload(withSignatures)
     } finally {
       setDownloading(false)
     }
@@ -195,17 +232,9 @@ export default function Builder() {
   const handleShare = async () => {
     setSharing(true)
     try {
-      if (!requireAuth()) return
-
-      const agreementId = await gateAction('share')
-      if (!agreementId && isPaymentsConfigured()) return
-
-      let current = { ...draft, id: agreementId || draft.id }
-      const shared = await enableSharing(current)
-      updateDraft({ shareToken: shared.shareToken, isShared: true, id: shared.id })
-      const url = `${window.location.origin}/view/${shared.id}?token=${shared.shareToken}`
-      await navigator.clipboard.writeText(url)
-      addToast('Share link copied to clipboard')
+      const allowed = await gateAction('share')
+      if (!allowed) return
+      await executeShare()
     } catch {
       addToast('Failed to create share link', 'error')
     } finally {
@@ -224,6 +253,14 @@ export default function Builder() {
     addToast('Version restored')
   }
 
+  const documentId = getDocumentId()
+  const previewUnlocked =
+    !isPaymentsConfigured() ||
+    isDocumentPaid(documentId, 'download') ||
+    isDocumentPaid(documentId, 'share')
+  const signaturesUnlocked =
+    !isPaymentsConfigured() || isDocumentPaid(documentId, 'download')
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <BuilderNavbar
@@ -234,17 +271,12 @@ export default function Builder() {
         onDownload={() => handleDownload(false)}
         saving={saving}
         saved={saved}
-        downloading={downloading}
-        consuming={consuming}
-        creditRefreshKey={creditRefreshKey}
+        downloading={downloading || paying}
       />
 
-      {isPaymentsConfigured() && !user && (
+      {isPaymentsConfigured() && (
         <div className="bg-accent border-b px-4 py-2 text-sm text-center text-accent-foreground">
-          <button type="button" onClick={() => navigate('/login?redirect=/builder')} className="underline font-medium">
-            Sign in
-          </button>
-          {' '}to download PDFs or share agreements. Drafting and preview are free.
+          Drafting is free. Pay $5 per document to download or share — no account required.
         </div>
       )}
 
@@ -298,9 +330,9 @@ export default function Builder() {
               <Button variant="outline" size="sm" onClick={() => setAuditOpen(true)}>
                 Audit Log
               </Button>
-              <Button variant="outline" size="sm" onClick={handleShare} disabled={sharing || consuming}>
+              <Button variant="outline" size="sm" onClick={handleShare} disabled={sharing || paying}>
                 {sharing ? <Spinner size="sm" /> : <Share2 className="h-4 w-4" />}
-                Share Link
+                Share Link ($5)
               </Button>
             </div>
           </div>
@@ -311,6 +343,8 @@ export default function Builder() {
                 agreement={draft}
                 signatures={signatures}
                 onSignaturesChange={setSignatures}
+                unlocked={previewUnlocked}
+                signaturesUnlocked={signaturesUnlocked}
               />
             </div>
           </div>
@@ -327,32 +361,22 @@ export default function Builder() {
             agreement={draft}
             signatures={signatures}
             onSignaturesChange={setSignatures}
+            unlocked={previewUnlocked}
+            signaturesUnlocked={signaturesUnlocked}
           />
         </div>
       </details>
 
-      <TemplateLibrary
-        open={templatesOpen}
-        onOpenChange={setTemplatesOpen}
-        onSelect={loadTemplate}
-      />
-      <VersionHistory
-        open={versionsOpen}
-        onOpenChange={setVersionsOpen}
-        draft={draft}
-        onRestore={restoreVersion}
-      />
+      <TemplateLibrary open={templatesOpen} onOpenChange={setTemplatesOpen} onSelect={loadTemplate} />
+      <VersionHistory open={versionsOpen} onOpenChange={setVersionsOpen} draft={draft} onRestore={restoreVersion} />
       <AuditLogPanel open={auditOpen} onOpenChange={setAuditOpen} />
-      <EmailNotifyModal
-        open={emailModalOpen}
-        onOpenChange={setEmailModalOpen}
-        draft={draft}
-      />
-      <BuyCreditsModal
-        open={buyCreditsOpen}
-        onOpenChange={setBuyCreditsOpen}
+      <EmailNotifyModal open={emailModalOpen} onOpenChange={setEmailModalOpen} draft={draft} />
+      <PayForDocumentModal
+        open={payModalOpen}
+        onOpenChange={setPayModalOpen}
         action={pendingAction}
-        onCreditsUpdated={() => setCreditRefreshKey((k) => k + 1)}
+        onPay={handlePayAndContinue}
+        loading={paying}
       />
     </div>
   )

@@ -12,18 +12,10 @@ export function isSupabaseConfigured() {
   return !!supabase
 }
 
-async function getCurrentUserId() {
-  if (!supabase) return null
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.id ?? null
-}
-
 export async function saveDraftToBackend(draft) {
   if (!supabase) {
     return { data: { id: draft.id || crypto.randomUUID() }, error: null, offline: true }
   }
-
-  const userId = await getCurrentUserId()
 
   const payload = {
     session_id: draft.sessionId,
@@ -32,7 +24,6 @@ export async function saveDraftToBackend(draft) {
     share_token: draft.shareToken,
     is_shared: draft.isShared || false,
     updated_at: new Date().toISOString(),
-    ...(userId ? { user_id: userId } : {}),
   }
 
   if (draft.id) {

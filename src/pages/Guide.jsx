@@ -10,8 +10,8 @@ const steps = [
   { num: '3', title: 'Set financial terms', desc: 'Configure percentages, payment frequency, thresholds, or commission rates.' },
   { num: '4', title: 'Add duration & dispute clauses', desc: 'Set start/end dates, auto-renewal, termination notice, and governing law.' },
   { num: '5', title: 'Customize with extra clauses', desc: 'Add free-text provisions for non-compete, IP ownership, or any special terms.' },
-  { num: '6', title: 'Preview & sign', desc: 'Review the live document preview, draw signatures on the canvas, and download your PDF.' },
-  { num: '7', title: 'Share or save', desc: 'Save to the cloud, create a read-only share link, or email summaries to partners.' },
+  { num: '6', title: 'Preview & sign', desc: 'Review the live document preview and draw signatures on the canvas.' },
+  { num: '7', title: 'Pay & download', desc: 'Pay $5 to download your PDF or $5 to generate a share link — no account needed.' },
 ]
 
 export default function Guide() {

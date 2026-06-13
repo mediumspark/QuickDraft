@@ -260,6 +260,70 @@ export function buildAgreementText(agreement) {
   return lines.join('\n')
 }
 
+const DISPUTE_METHOD_LABELS = {
+  arbitration: 'Binding Arbitration',
+  litigation: 'Litigation',
+  mediation_arbitration: 'Mediation then Arbitration',
+}
+
+export function buildAgreementSummary(agreement) {
+  const f = agreement.financial || {}
+  const d = agreement.duration || {}
+  const dispute = agreement.dispute || {}
+  const { partyA, partyB, additional } = agreement.parties || {}
+  const type = agreement.type
+
+  let financialSummary = 'Not specified'
+  if (type === 'commission_based') {
+    financialSummary = `${f.commissionRate || 0}% commission on ${f.commissionBasis || 'qualifying transactions'}`
+  } else if (type === 'nda') {
+    financialSummary = 'No financial terms (NDA)'
+  } else {
+    const basis = f.grossOrNet === 'net' ? 'Net' : 'Gross'
+    const label = type === 'profit_sharing' ? 'profit' : 'revenue'
+    financialSummary = `${basis} ${label}: Party A ${f.partyAPercent || 0}% / Party B ${f.partyBPercent || 0}%, ${formatFrequency(f.paymentFrequency)}`
+    if (f.minimumThreshold) {
+      financialSummary += `, $${f.minimumThreshold} minimum threshold`
+    }
+  }
+
+  const parties = [
+    { label: 'Party A', name: partyA?.name, role: partyA?.role },
+    { label: 'Party B', name: partyB?.name, role: partyB?.role },
+  ]
+
+  additional?.forEach((p, i) => {
+    parties.push({
+      label: `Partner ${i + 1}`,
+      name: p.name,
+      role: p.role,
+      percentage: p.percentage,
+    })
+  })
+
+  const customClauses = (agreement.customClauses || [])
+    .filter((c) => c.title?.trim())
+    .map((c) => c.title.trim())
+
+  return {
+    type: getAgreementTypeLabel(type),
+    parties,
+    financialSummary,
+    duration: {
+      start: d.startDate || 'Not set',
+      end: d.endDate || 'Not set',
+      autoRenewal: d.autoRenewal ? `Yes (${d.renewalPeriod || '12 months'})` : 'No',
+      terminationNotice: `${d.terminationNoticeDays || 30} days`,
+    },
+    dispute: {
+      method: DISPUTE_METHOD_LABELS[dispute.method] || dispute.method || 'Not set',
+      governingLaw: [dispute.governingState, dispute.governingCountry].filter(Boolean).join(', ') || 'Not set',
+    },
+    customClauses,
+    customClauseCount: agreement.customClauses?.length || 0,
+  }
+}
+
 export function buildEmailSummary(agreement) {
   const f = agreement.financial || {}
   const d = agreement.duration || {}

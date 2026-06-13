@@ -1,11 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { useAuth } from '@/contexts/AuthContext'
-import CreditBalance from '@/components/CreditBalance'
 
-export default function Navbar({ variant = 'landing', creditRefreshKey = 0 }) {
-  const { user, signOut, isConfigured } = useAuth()
-
+export default function Navbar({ variant = 'landing' }) {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -27,33 +23,11 @@ export default function Navbar({ variant = 'landing', creditRefreshKey = 0 }) {
           </nav>
         )}
 
-        <div className="flex items-center gap-2">
-          {user && <CreditBalance refreshKey={creditRefreshKey} />}
-          {user ? (
-            <>
-              <span className="text-sm text-muted-foreground hidden sm:inline truncate max-w-[140px]">
-                {user.email}
-              </span>
-              <Button variant="ghost" size="sm" onClick={signOut}>
-                Sign Out
-              </Button>
-            </>
-          ) : isConfigured ? (
-            <>
-              <Link to="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
-              </Link>
-              <Link to="/signup">
-                <Button variant="outline" size="sm">Sign Up</Button>
-              </Link>
-            </>
-          ) : null}
-          <Link to="/builder">
-            <Button size={variant === 'builder' ? 'sm' : 'default'}>
-              {variant === 'builder' ? 'New Draft' : 'Start Drafting'}
-            </Button>
-          </Link>
-        </div>
+        <Link to="/builder">
+          <Button size={variant === 'builder' ? 'sm' : 'default'}>
+            {variant === 'builder' ? 'New Draft' : 'Start Drafting'}
+          </Button>
+        </Link>
       </div>
     </header>
   )
@@ -61,11 +35,8 @@ export default function Navbar({ variant = 'landing', creditRefreshKey = 0 }) {
 
 export function BuilderNavbar({
   onTemplates, onVersionHistory, onSave, onSignDownload, onDownload,
-  saving, saved, downloading, consuming, creditRefreshKey = 0,
+  saving, saved, downloading,
 }) {
-  const { user, signOut } = useAuth()
-  const busy = downloading || consuming
-
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
       <div className="flex h-14 items-center justify-between gap-2 px-4">
@@ -78,29 +49,19 @@ export function BuilderNavbar({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {user && <CreditBalance refreshKey={creditRefreshKey} />}
           <Button variant="ghost" size="sm" onClick={onTemplates} className="hidden sm:inline-flex">
             Templates
           </Button>
           <Button variant="ghost" size="sm" onClick={onVersionHistory} className="hidden sm:inline-flex">
             Version History
           </Button>
-          {user ? (
-            <Button variant="ghost" size="sm" onClick={signOut} className="hidden md:inline-flex">
-              Sign Out
-            </Button>
-          ) : (
-            <Link to="/login?redirect=%2Fbuilder">
-              <Button variant="ghost" size="sm">Sign In</Button>
-            </Link>
-          )}
           <Button variant="outline" size="sm" onClick={onSave} disabled={saving}>
             {saved ? '✓ Saved' : saving ? 'Saving...' : 'Save'}
           </Button>
-          <Button size="sm" onClick={onSignDownload} disabled={busy}>
-            {busy ? '...' : 'Sign & Download'}
+          <Button size="sm" onClick={onSignDownload} disabled={downloading}>
+            {downloading ? '...' : 'Sign & Download'}
           </Button>
-          <Button variant="secondary" size="sm" onClick={onDownload} disabled={busy}>
+          <Button variant="secondary" size="sm" onClick={onDownload} disabled={downloading}>
             Download
           </Button>
         </div>

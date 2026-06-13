@@ -1,10 +1,9 @@
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
-import { corsHeaders } from '../_shared/cors.ts'
 import { createServiceClient } from '../_shared/supabase.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }
 
   const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
@@ -24,18 +23,17 @@ Deno.serve(async (req) => {
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session
-      const userId = session.metadata?.user_id
-      const credits = parseInt(session.metadata?.credits ?? '1', 10)
+      const documentId = session.metadata?.document_id
+      const action = session.metadata?.action
 
-      if (!userId || !session.id) {
+      if (!documentId || !action || !session.id) {
         return new Response('Missing metadata', { status: 400 })
       }
 
       const supabase = createServiceClient()
 
-      // Idempotent: skip if purchase already recorded
       const { data: existing } = await supabase
-        .from('purchases')
+        .from('document_payments')
         .select('id')
         .eq('stripe_session_id', session.id)
         .maybeSingle()
@@ -46,36 +44,13 @@ Deno.serve(async (req) => {
         })
       }
 
-      const amountCents = session.amount_total ?? credits * 500
-
-      const { error: purchaseError } = await supabase.from('purchases').insert({
-        user_id: userId,
+      await supabase.from('document_payments').insert({
+        document_id: documentId,
+        action,
         stripe_session_id: session.id,
-        credits_added: credits,
-        amount_cents: amountCents,
+        amount_cents: session.amount_total ?? 500,
         status: 'completed',
       })
-
-      if (purchaseError) {
-        throw purchaseError
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('credits')
-        .eq('id', userId)
-        .single()
-
-      const newCredits = (profile?.credits ?? 0) + credits
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ credits: newCredits, updated_at: new Date().toISOString() })
-        .eq('id', userId)
-
-      if (updateError) {
-        throw updateError
-      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
