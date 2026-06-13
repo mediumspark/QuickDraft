@@ -3,36 +3,48 @@ import { Link } from 'react-router-dom'
 import { User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import AuthModal from '@/components/AuthModal'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { useAuth } from '@/contexts/AuthContext'
 
 function AuthButtons({ size = 'default' }) {
-  const { user, loading, isAuthConfigured } = useAuth()
+  const { user, loading, signInWithGoogle, isAuthConfigured } = useAuth()
   const [authOpen, setAuthOpen] = React.useState(false)
+  const [googleLoading, setGoogleLoading] = React.useState(false)
 
-  if (loading) return null
-
-  if (!isAuthConfigured) {
-    return (
-      <Link to="/builder">
-        <Button size={size}>Start Drafting</Button>
-      </Link>
-    )
+  const handleGoogleSignIn = async () => {
+    if (!isAuthConfigured) {
+      setAuthOpen(true)
+      return
+    }
+    setGoogleLoading(true)
+    try {
+      await signInWithGoogle('/account')
+    } catch {
+      setAuthOpen(true)
+      setGoogleLoading(false)
+    }
   }
 
   return (
     <>
       <div className="flex items-center gap-2">
-        {user ? (
-          <Link to="/account">
-            <Button variant="outline" size={size}>
-              <User className="h-4 w-4 mr-2" />
-              Account
-            </Button>
-          </Link>
-        ) : (
-          <Button variant="outline" size={size} onClick={() => setAuthOpen(true)}>
-            Sign In
-          </Button>
+        {!loading && (
+          user ? (
+            <Link to="/account">
+              <Button variant="outline" size={size}>
+                <User className="h-4 w-4 mr-2" />
+                Account
+              </Button>
+            </Link>
+          ) : (
+            <GoogleSignInButton
+              size={size}
+              onClick={handleGoogleSignIn}
+              loading={googleLoading}
+              label={size === 'sm' ? 'Google' : 'Sign in with Google'}
+              className="w-auto"
+            />
+          )
         )}
         <Link to="/builder">
           <Button size={size}>
@@ -40,7 +52,12 @@ function AuthButtons({ size = 'default' }) {
           </Button>
         </Link>
       </div>
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+      <AuthModal
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        redirectPath="/account"
+        isConfigured={isAuthConfigured}
+      />
     </>
   )
 }
@@ -77,8 +94,23 @@ export function BuilderNavbar({
   onTemplates, onVersionHistory, onSave, onSignDownload, onDownload,
   saving, saved, downloading,
 }) {
-  const { user, isAuthConfigured } = useAuth()
+  const { user, signInWithGoogle, isAuthConfigured } = useAuth()
   const [authOpen, setAuthOpen] = React.useState(false)
+  const [googleLoading, setGoogleLoading] = React.useState(false)
+
+  const handleGoogleSignIn = async () => {
+    if (!isAuthConfigured) {
+      setAuthOpen(true)
+      return
+    }
+    setGoogleLoading(true)
+    try {
+      await signInWithGoogle('/builder')
+    } catch {
+      setAuthOpen(true)
+      setGoogleLoading(false)
+    }
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
@@ -92,19 +124,21 @@ export function BuilderNavbar({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {isAuthConfigured && (
-            user ? (
-              <Link to="/account" className="hidden sm:inline-flex">
-                <Button variant="ghost" size="sm">
-                  <User className="h-4 w-4 mr-1" />
-                  Account
-                </Button>
-              </Link>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={() => setAuthOpen(true)} className="hidden sm:inline-flex">
-                Sign In
+          {user ? (
+            <Link to="/account" className="hidden sm:inline-flex">
+              <Button variant="ghost" size="sm">
+                <User className="h-4 w-4 mr-1" />
+                Account
               </Button>
-            )
+            </Link>
+          ) : (
+            <GoogleSignInButton
+              size="sm"
+              onClick={handleGoogleSignIn}
+              loading={googleLoading}
+              label="Google"
+              className="hidden sm:inline-flex w-auto"
+            />
           )}
           <Button variant="ghost" size="sm" onClick={onTemplates} className="hidden sm:inline-flex">
             Templates
@@ -123,7 +157,12 @@ export function BuilderNavbar({
           </Button>
         </div>
       </div>
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+      <AuthModal
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        redirectPath="/builder"
+        isConfigured={isAuthConfigured}
+      />
     </header>
   )
 }

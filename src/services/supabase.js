@@ -3,10 +3,25 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase =
-  supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-project')
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null
+function hasValidSupabaseEnv() {
+  return (
+    supabaseUrl &&
+    supabaseAnonKey &&
+    !supabaseUrl.includes('your-project') &&
+    !supabaseAnonKey.includes('your-anon') &&
+    supabaseUrl.startsWith('https://')
+  )
+}
+
+export const supabase = hasValidSupabaseEnv()
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : null
 
 export function isSupabaseConfigured() {
   return !!supabase

@@ -98,15 +98,11 @@ export default function Account() {
         <main className="flex-1 container mx-auto px-4 py-16 text-center max-w-lg">
           <h1 className="text-2xl font-bold mb-4">Your Account</h1>
           <p className="text-muted-foreground mb-6">
-            Sign in to save drafts across devices and access your purchase history.
-            Drafting and summary previews remain free — no account required.
-          </p>
-          <p className="text-sm text-muted-foreground mb-6">
-            Sign in to save drafts across devices and access your purchase history.
+            Sign in with Google to save drafts across devices and access your purchase history.
             Drafting and summary previews remain free.
           </p>
-          <Button onClick={() => setAuthOpen(true)}>Sign In</Button>
-          <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+          <Button onClick={() => setAuthOpen(true)}>Continue with Google</Button>
+          <AuthModal open={authOpen} onOpenChange={setAuthOpen} redirectPath="/account" />
         </main>
         <Footer />
       </div>

@@ -32,18 +32,18 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email, password) => {
+  const signInWithGoogle = async (redirectPath) => {
     if (!supabase) throw new Error('Sign in requires Supabase to be configured')
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) throw error
-    return data
-  }
 
-  const signIn = async (email, password) => {
-    if (!supabase) throw new Error('Sign in requires Supabase to be configured')
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const path = redirectPath || window.location.pathname || '/'
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}${path}`,
+      },
+    })
+
     if (error) throw error
-    return data
   }
 
   const signOut = async () => {
@@ -55,8 +55,7 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
-    signUp,
-    signIn,
+    signInWithGoogle,
     signOut,
     isAuthConfigured: isSupabaseConfigured(),
   }

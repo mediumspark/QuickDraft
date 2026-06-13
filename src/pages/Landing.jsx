@@ -4,6 +4,7 @@ import {
   Blocks, Eye, FileDown, Share2, TrendingUp, PieChart, HandCoins,
 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import LandingAuthActions from '@/components/LandingAuthActions'
 import Footer from '@/components/Footer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -45,7 +46,7 @@ export default function Landing() {
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               Drafting and summary previews are free. Pay $5 per document to download or share.
-              Create a free account to save drafts across devices.
+              Sign in with Google to save drafts across devices.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/builder">
@@ -55,6 +56,7 @@ export default function Landing() {
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">How It Works</Button>
               </Link>
             </div>
+            <LandingAuthActions className="mt-4" />
           </motion.div>
         </section>
 
@@ -131,7 +133,7 @@ export default function Landing() {
                   <li>✓ $5 = PDF download for one agreement</li>
                   <li>✓ $5 = shareable read-only link</li>
                   <li>✓ Free drafting &amp; summary previews</li>
-                  <li>✓ Free account to save drafts across devices</li>
+                  <li>✓ Sign in with Google to save drafts</li>
                 </ul>
                 <Link to="/builder" className="block mt-6">
                   <Button className="w-full">Get Started</Button>

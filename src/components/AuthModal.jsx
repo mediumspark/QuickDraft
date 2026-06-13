@@ -1,63 +1,80 @@
 import * as React from 'react'
-import { LogIn } from 'lucide-react'
+import { LogIn, AlertCircle, ExternalLink } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { useAuth } from '@/contexts/AuthContext'
+import { getSupabaseConfigStatus } from '@/utils/supabaseConfig'
 
-export default function AuthModal({ open, onOpenChange, defaultMode = 'signin' }) {
-  const { signIn, signUp, isAuthConfigured } = useAuth()
-  const [mode, setMode] = React.useState(defaultMode)
-  const [email, setEmail] = React.useState('')
-  const [password, setPassword] = React.useState('')
+function SetupInstructions() {
+  const { issues, steps } = getSupabaseConfigStatus()
+
+  return (
+    <div className="space-y-4 text-sm">
+      <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 flex gap-2">
+        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+        <div>
+          <p className="font-medium">Supabase is not configured yet</p>
+          {issues.length > 0 && (
+            <ul className="mt-1 list-disc list-inside text-amber-800">
+              {issues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <p className="font-medium mb-2">Setup steps:</p>
+        <ol className="list-decimal list-inside space-y-1.5 text-muted-foreground">
+          {steps.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="rounded-md border bg-muted/40 p-3 font-mono text-xs space-y-1">
+        <p className="text-muted-foreground font-sans text-sm mb-2">Your .env should look like:</p>
+        <p>VITE_SUPABASE_URL=https://abcdefgh.supabase.co</p>
+        <p>VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</p>
+      </div>
+
+      <a
+        href="https://supabase.com/dashboard/project/_/auth/providers?provider=Google"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-primary hover:underline"
+      >
+        Open Supabase Google provider settings
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    </div>
+  )
+}
+
+export default function AuthModal({ open, onOpenChange, redirectPath = '/account', isConfigured }) {
+  const { signInWithGoogle, isAuthConfigured: authConfiguredFromContext } = useAuth()
+  const isAuthConfigured = isConfigured ?? authConfiguredFromContext
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState('')
-  const [message, setMessage] = React.useState('')
 
   const handleOpenChange = (next) => {
     if (!next) {
-      setEmail('')
-      setPassword('')
       setError('')
-      setMessage('')
-      setMode(defaultMode)
-    } else {
-      setMode(defaultMode)
     }
     onOpenChange(next)
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleGoogleSignIn = async () => {
     setError('')
-    setMessage('')
     setLoading(true)
-
     try {
-      if (mode === 'signup') {
-        const { user } = await signUp(email, password)
-        if (user && !user.confirmed_at) {
-          setMessage('Check your email to confirm your account, then sign in.')
-        } else {
-          onOpenChange(false)
-        }
-      } else {
-        await signIn(email, password)
-        onOpenChange(false)
-      }
+      await signInWithGoogle(redirectPath)
     } catch (err) {
-      setError(err.message || 'Authentication failed')
-    } finally {
+      setError(err.message || 'Could not start Google sign in')
       setLoading(false)
     }
-  }
-
-  const toggleMode = () => {
-    setMode((m) => (m === 'signin' ? 'signup' : 'signin'))
-    setError('')
-    setMessage('')
   }
 
   return (
@@ -66,75 +83,34 @@ export default function AuthModal({ open, onOpenChange, defaultMode = 'signin' }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <LogIn className="h-5 w-5 text-primary" />
-            {mode === 'signin' ? 'Sign In' : 'Create Account'}
+            Sign in with Google
           </DialogTitle>
           <DialogDescription>
-            {mode === 'signin'
-              ? 'Access your saved drafts and purchases across devices.'
-              : 'Create a free account to save drafts and sync purchases.'}
+            Use your Google account to save drafts and sync purchases across devices.
+            Drafting and agreement previews stay free.
           </DialogDescription>
         </DialogHeader>
 
         {!isAuthConfigured ? (
-          <p className="text-sm text-muted-foreground">
-            Sign in requires Supabase to be configured. You can still draft and preview agreements without an account.
-          </p>
+          <SetupInstructions />
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="auth-email">Email</Label>
-              <Input
-                id="auth-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                autoComplete="email"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="auth-password">Password</Label>
-              <Input
-                id="auth-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              />
-            </div>
+          <div className="space-y-4">
+            <GoogleSignInButton
+              onClick={handleGoogleSignIn}
+              loading={loading}
+              label="Continue with Google"
+            />
 
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
-            {message && (
-              <p className="text-sm text-primary">{message}</p>
+
+            {loading && (
+              <p className="text-sm text-muted-foreground text-center">
+                Redirecting to Google...
+              </p>
             )}
-
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? <Spinner size="sm" /> : null}
-              {loading
-                ? 'Please wait...'
-                : mode === 'signin'
-                  ? 'Sign In'
-                  : 'Create Account'}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="text-primary hover:underline font-medium"
-              >
-                {mode === 'signin' ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </form>
+          </div>
         )}
       </DialogContent>
     </Dialog>
