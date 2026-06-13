@@ -24,7 +24,7 @@ import {
 import { getOrCreateSessionId } from '@/utils/agreementUtils'
 import { downloadPdf } from '@/utils/pdfUtils'
 import { sendSignatureEmails } from '@/utils/emailUtils'
-import { saveDraftToBackend, enableSharing } from '@/services/supabase'
+import { saveDraftToBackend, enableSharing, loadUserDraftById } from '@/services/supabase'
 import {
   isPaymentsConfigured,
   isDocumentPaid,
@@ -34,10 +34,13 @@ import {
   getPendingPayment,
   clearPendingPayment,
   setPendingPayment,
+  syncUserPaidDocuments,
 } from '@/services/payments'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Builder() {
   const { addToast } = useToast()
+  const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [draft, setDraft] = React.useState(() => {
@@ -68,6 +71,38 @@ export default function Builder() {
   React.useEffect(() => {
     saveToStorage(DRAFT_KEY, draft)
   }, [draft])
+
+  React.useEffect(() => {
+    if (user) {
+      syncUserPaidDocuments()
+    }
+  }, [user])
+
+  const draftId = searchParams.get('draft')
+
+  React.useEffect(() => {
+    if (!draftId || !user) return
+
+    let cancelled = false
+
+    async function loadDraft() {
+      const { data, error } = await loadUserDraftById(draftId)
+      if (cancelled) return
+      if (error || !data) {
+        addToast('Could not load draft', 'error')
+        return
+      }
+      setDraft(data)
+      setSavedId(data.id)
+      addToast('Draft loaded from your account')
+      const next = new URLSearchParams(searchParams)
+      next.delete('draft')
+      setSearchParams(next, { replace: true })
+    }
+
+    loadDraft()
+    return () => { cancelled = true }
+  }, [draftId, user])
 
   const updateDraft = (patch) => setDraft((d) => ({ ...d, ...patch }))
 
@@ -276,7 +311,8 @@ export default function Builder() {
 
       {isPaymentsConfigured() && (
         <div className="bg-accent border-b px-4 py-2 text-sm text-center text-accent-foreground">
-          Drafting is free. Pay $5 per document to download or share — no account required.
+          Drafting and summary previews are free. Pay $5 per document to download or share.
+          {user ? ' Your purchases sync to your account.' : ' Sign in to save drafts across devices.'}
         </div>
       )}
 

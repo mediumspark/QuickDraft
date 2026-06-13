@@ -1,3 +1,5 @@
+import { supabase } from '@/services/supabase'
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
@@ -8,11 +10,21 @@ function getFunctionsUrl() {
   return `${supabaseUrl}/functions/v1`
 }
 
-function getPublicHeaders() {
-  return {
-    Authorization: `Bearer ${supabaseAnonKey}`,
+async function getAuthHeaders() {
+  const headers = {
     'Content-Type': 'application/json',
   }
+
+  if (supabase) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`
+      return headers
+    }
+  }
+
+  headers.Authorization = `Bearer ${supabaseAnonKey}`
+  return headers
 }
 
 export function isPaymentsConfigured() {
@@ -48,6 +60,26 @@ export function markDocumentPaid(documentId, action) {
   savePaidDocuments(paid)
 }
 
+export async function syncUserPaidDocuments() {
+  if (!supabase) return
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data, error } = await supabase
+    .from('document_payments')
+    .select('document_id, action')
+    .eq('user_id', user.id)
+
+  if (error || !data?.length) return
+
+  const paid = loadPaidDocuments()
+  for (const row of data) {
+    paid[row.document_id] = { ...paid[row.document_id], [row.action]: true }
+  }
+  savePaidDocuments(paid)
+}
+
 export function setPendingPayment(documentId, action, extra = {}) {
   sessionStorage.setItem(
     PENDING_PAYMENT_KEY,
@@ -77,7 +109,7 @@ export async function createDocumentCheckout(documentId, action) {
 
   const response = await fetch(`${getFunctionsUrl()}/create-document-checkout`, {
     method: 'POST',
-    headers: getPublicHeaders(),
+    headers: await getAuthHeaders(),
     body: JSON.stringify({ documentId, action }),
   })
 
@@ -97,7 +129,7 @@ export async function verifyDocumentPayment(sessionId) {
 
   const response = await fetch(`${getFunctionsUrl()}/verify-document-payment`, {
     method: 'POST',
-    headers: getPublicHeaders(),
+    headers: await getAuthHeaders(),
     body: JSON.stringify({ sessionId }),
   })
 

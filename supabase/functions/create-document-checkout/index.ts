@@ -1,5 +1,6 @@
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { corsHeaders } from '../_shared/cors.ts'
+import { getAuthenticatedUser } from '../_shared/supabase.ts'
 
 const DOCUMENT_PRICE_CENTS = 500 // $5 per document action
 
@@ -18,12 +19,23 @@ Deno.serve(async (req) => {
       })
     }
 
+    const user = await getAuthenticatedUser(req)
+
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
       apiVersion: '2023-10-16',
     })
 
     const origin = req.headers.get('origin') ?? 'http://localhost:5173'
     const actionLabel = action === 'download' ? 'PDF Download' : 'Share Link'
+
+    const metadata: Record<string, string> = {
+      document_id: documentId,
+      action,
+    }
+
+    if (user?.id) {
+      metadata.user_id = user.id
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -41,10 +53,7 @@ Deno.serve(async (req) => {
           quantity: 1,
         },
       ],
-      metadata: {
-        document_id: documentId,
-        action,
-      },
+      metadata,
       success_url: `${origin}/builder?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/builder?payment=cancelled`,
     })

@@ -16,8 +16,11 @@ export default function PayForDocumentModal({ open, onOpenChange, action = 'down
             {title}
           </DialogTitle>
           <DialogDescription>
-            Pay $5 once to {actionLabel}. No account needed. Re-downloading or re-copying the
-            same link on this device is free after payment.
+            Pay $5 once to {actionLabel}. Summary previews are always free before you buy.
+            {action === 'share'
+              ? ' Re-copying the share link on this device is free after payment.'
+              : ' Re-downloading on this device is free after payment.'}
+            {' '}Sign in to sync purchases across devices.
           </DialogDescription>
         </DialogHeader>
 

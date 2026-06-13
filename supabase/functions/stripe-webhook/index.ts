@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       await supabase.from('document_payments').insert({
         document_id: documentId,
         action,
+        user_id: session.metadata?.user_id || null,
         stripe_session_id: session.id,
         amount_cents: session.amount_total ?? 500,
         status: 'completed',

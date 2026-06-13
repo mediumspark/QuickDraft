@@ -1,5 +1,49 @@
+import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import AuthModal from '@/components/AuthModal'
+import { useAuth } from '@/contexts/AuthContext'
+
+function AuthButtons({ size = 'default' }) {
+  const { user, loading, isAuthConfigured } = useAuth()
+  const [authOpen, setAuthOpen] = React.useState(false)
+
+  if (loading) return null
+
+  if (!isAuthConfigured) {
+    return (
+      <Link to="/builder">
+        <Button size={size}>Start Drafting</Button>
+      </Link>
+    )
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        {user ? (
+          <Link to="/account">
+            <Button variant="outline" size={size}>
+              <User className="h-4 w-4 mr-2" />
+              Account
+            </Button>
+          </Link>
+        ) : (
+          <Button variant="outline" size={size} onClick={() => setAuthOpen(true)}>
+            Sign In
+          </Button>
+        )}
+        <Link to="/builder">
+          <Button size={size}>
+            {size === 'sm' ? 'New Draft' : 'Start Drafting'}
+          </Button>
+        </Link>
+      </div>
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+    </>
+  )
+}
 
 export default function Navbar({ variant = 'landing' }) {
   return (
@@ -23,11 +67,7 @@ export default function Navbar({ variant = 'landing' }) {
           </nav>
         )}
 
-        <Link to="/builder">
-          <Button size={variant === 'builder' ? 'sm' : 'default'}>
-            {variant === 'builder' ? 'New Draft' : 'Start Drafting'}
-          </Button>
-        </Link>
+        <AuthButtons size={variant === 'builder' ? 'sm' : 'default'} />
       </div>
     </header>
   )
@@ -37,6 +77,9 @@ export function BuilderNavbar({
   onTemplates, onVersionHistory, onSave, onSignDownload, onDownload,
   saving, saved, downloading,
 }) {
+  const { user, isAuthConfigured } = useAuth()
+  const [authOpen, setAuthOpen] = React.useState(false)
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
       <div className="flex h-14 items-center justify-between gap-2 px-4">
@@ -49,6 +92,20 @@ export function BuilderNavbar({
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {isAuthConfigured && (
+            user ? (
+              <Link to="/account" className="hidden sm:inline-flex">
+                <Button variant="ghost" size="sm">
+                  <User className="h-4 w-4 mr-1" />
+                  Account
+                </Button>
+              </Link>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={() => setAuthOpen(true)} className="hidden sm:inline-flex">
+                Sign In
+              </Button>
+            )
+          )}
           <Button variant="ghost" size="sm" onClick={onTemplates} className="hidden sm:inline-flex">
             Templates
           </Button>
@@ -66,6 +123,7 @@ export function BuilderNavbar({
           </Button>
         </div>
       </div>
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
     </header>
   )
 }

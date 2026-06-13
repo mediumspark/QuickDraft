@@ -44,7 +44,8 @@ export default function Landing() {
               without the hourly legal fees. Build, preview, sign, and share — all in one place.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Drafting is free. Pay $5 per document to download or share — no account required.
+              Drafting and summary previews are free. Pay $5 per document to download or share.
+              Create a free account to save drafts across devices.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/builder">
@@ -122,15 +123,15 @@ export default function Landing() {
           <div className="container mx-auto px-4 text-center">
             <motion.div {...fadeIn}>
               <h2 className="text-3xl font-bold">Simple pay-as-you-go pricing</h2>
-              <p className="text-muted-foreground mt-2 mb-10">No subscriptions. No accounts. Pay only when you download or share.</p>
+              <p className="text-muted-foreground mt-2 mb-10">No subscriptions. Pay only when you download or share.</p>
               <div className="inline-block rounded-xl border bg-card p-8 shadow-sm max-w-sm">
                 <p className="text-5xl font-bold text-primary">$5</p>
                 <p className="text-muted-foreground mt-1">per document</p>
                 <ul className="mt-6 space-y-2 text-sm text-left">
                   <li>✓ $5 = PDF download for one agreement</li>
                   <li>✓ $5 = shareable read-only link</li>
-                  <li>✓ Unlimited drafting &amp; previewing</li>
-                  <li>✓ No sign-up required</li>
+                  <li>✓ Free drafting &amp; summary previews</li>
+                  <li>✓ Free account to save drafts across devices</li>
                 </ul>
                 <Link to="/builder" className="block mt-6">
                   <Button className="w-full">Get Started</Button>

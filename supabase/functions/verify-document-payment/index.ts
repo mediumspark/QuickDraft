@@ -1,6 +1,6 @@
 import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { corsHeaders } from '../_shared/cors.ts'
-import { createServiceClient } from '../_shared/supabase.ts'
+import { createServiceClient, getAuthenticatedUser } from '../_shared/supabase.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
 
     const documentId = session.metadata?.document_id
     const action = session.metadata?.action
+    const metadataUserId = session.metadata?.user_id
 
     if (!documentId || !action) {
       return new Response(JSON.stringify({ error: 'Invalid session metadata' }), {
@@ -39,6 +40,9 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
+    const authUser = await getAuthenticatedUser(req)
+    const userId = metadataUserId || authUser?.id || null
 
     const supabase = createServiceClient()
 
@@ -52,6 +56,7 @@ Deno.serve(async (req) => {
       await supabase.from('document_payments').insert({
         document_id: documentId,
         action,
+        user_id: userId,
         stripe_session_id: session.id,
         amount_cents: session.amount_total ?? 500,
         status: 'completed',

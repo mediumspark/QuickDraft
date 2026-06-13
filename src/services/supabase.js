@@ -12,10 +12,24 @@ export function isSupabaseConfigured() {
   return !!supabase
 }
 
-export async function saveDraftToBackend(draft) {
+export async function getCurrentUser() {
+  if (!supabase) return null
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
+
+export async function getAccessToken() {
+  if (!supabase) return null
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
+}
+
+export async function saveDraftToBackend(draft, userId = null) {
   if (!supabase) {
     return { data: { id: draft.id || crypto.randomUUID() }, error: null, offline: true }
   }
+
+  const uid = userId ?? (await getCurrentUser())?.id ?? null
 
   const payload = {
     session_id: draft.sessionId,
@@ -24,6 +38,10 @@ export async function saveDraftToBackend(draft) {
     share_token: draft.shareToken,
     is_shared: draft.isShared || false,
     updated_at: new Date().toISOString(),
+  }
+
+  if (uid) {
+    payload.user_id = uid
   }
 
   if (draft.id) {
@@ -58,6 +76,56 @@ export async function loadAgreementById(id, shareToken) {
   const { data, error } = await query.single()
   if (error) return { data: null, error }
   return { data: data?.data || data, error: null }
+}
+
+export async function loadUserDraftById(id) {
+  if (!supabase) return { data: null, error: new Error('Not configured') }
+
+  const { data, error } = await supabase
+    .from('agreements')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) return { data: null, error }
+
+  const draft = data.data
+  return {
+    data: { ...draft, id: data.id, sessionId: data.session_id },
+    error: null,
+  }
+}
+
+export async function listUserAgreements() {
+  if (!supabase) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('agreements')
+    .select('id, agreement_type, data, updated_at, created_at')
+    .order('updated_at', { ascending: false })
+
+  return { data: data || [], error }
+}
+
+export async function listUserPayments() {
+  if (!supabase) return { data: [], error: null }
+
+  const { data, error } = await supabase
+    .from('document_payments')
+    .select('id, document_id, action, amount_cents, created_at')
+    .order('created_at', { ascending: false })
+
+  return { data: data || [], error }
+}
+
+export async function claimSessionDrafts(sessionId, userId) {
+  if (!supabase || !sessionId || !userId) return
+
+  await supabase
+    .from('agreements')
+    .update({ user_id: userId })
+    .eq('session_id', sessionId)
+    .is('user_id', null)
 }
 
 export async function enableSharing(draft) {
