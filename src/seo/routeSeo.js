@@ -53,6 +53,12 @@ export const routeSeo = {
       'Purchase ready-made agreement templates as editable Word documents (.docx). Revenue sharing, NDAs, privacy policies, and more — $5 each.',
     index: true,
   },
+  '/boilerplates/simple-template': {
+    title: 'Simple Template — Word Agreement',
+    description:
+      'Buy the Simple Template: a ready-made 50/50 revenue sharing agreement as an editable Word document (.docx) for $5.',
+    index: true,
+  },
   '/templates/revenue-sharing': {
     title: 'Revenue Sharing Agreement Template',
     description:

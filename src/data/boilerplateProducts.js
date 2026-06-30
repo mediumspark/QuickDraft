@@ -4,6 +4,18 @@ export const BOILERPLATE_PRICE_CENTS = 500
 
 export const boilerplateProducts = [
   {
+    id: 'simple-template',
+    templateId: 'rev-50-50',
+    name: 'Simple Template',
+    description: 'Our most popular starter agreement — a clean 50/50 revenue split you can edit in Word and send today.',
+    highlights: [
+      'Ready-made Word document (.docx) — no builder required',
+      '50/50 revenue split with monthly payments',
+      'Parties, terms, and dispute clauses included',
+    ],
+    featured: true,
+  },
+  {
     id: 'revenue-sharing',
     templateId: 'rev-50-50',
     name: 'Revenue Sharing Agreement',
@@ -73,6 +85,10 @@ export const boilerplateProducts = [
 
 export function getBoilerplateProduct(id) {
   return boilerplateProducts.find((p) => p.id === id)
+}
+
+export function getFeaturedBoilerplate() {
+  return boilerplateProducts.find((p) => p.featured) ?? boilerplateProducts[0]
 }
 
 export function getBoilerplateAgreementData(product) {

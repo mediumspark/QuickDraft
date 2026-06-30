@@ -32,7 +32,10 @@ export default function Boilerplates() {
               className="rounded-xl border bg-card p-6 hover:border-primary/50 hover:shadow-md transition-all group"
             >
               <div className="flex items-start justify-between gap-3 mb-3">
-                <Badge variant="secondary">Word .docx</Badge>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">Word .docx</Badge>
+                  {product.featured && <Badge>Most popular</Badge>}
+                </div>
                 <span className="font-bold text-primary">{priceLabel}</span>
               </div>
               <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">

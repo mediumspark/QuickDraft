@@ -20,6 +20,7 @@ const routes = [
   '/faq',
   '/pricing',
   '/boilerplates',
+  '/boilerplates/simple-template',
   '/templates/revenue-sharing',
   '/templates/profit-sharing',
   '/templates/commission',

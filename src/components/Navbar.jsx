@@ -75,6 +75,7 @@ export default function Navbar({ variant = 'landing' }) {
 
         {variant === 'landing' && (
           <nav className="hidden md:flex items-center gap-6 text-sm">
+            <a href="#simple-template" className="text-muted-foreground hover:text-foreground transition-colors">Simple Template</a>
             <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
             <a href="#agreements" className="text-muted-foreground hover:text-foreground transition-colors">Agreements</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>

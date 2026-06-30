@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Blocks, Eye, FileDown, Share2, TrendingUp, PieChart, HandCoins,
-  Gamepad2, Code2, GraduationCap,
+  Gamepad2, Code2, GraduationCap, FileText,
 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import LandingAuthActions from '@/components/LandingAuthActions'
@@ -10,6 +10,8 @@ import Footer from '@/components/Footer'
 import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { getFeaturedBoilerplate, BOILERPLATE_PRICE_CENTS } from '@/data/boilerplateProducts'
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -49,6 +51,9 @@ const agreementTypes = [
 ]
 
 export default function Landing() {
+  const simpleTemplate = getFeaturedBoilerplate()
+  const simpleTemplatePrice = `$${BOILERPLATE_PRICE_CENTS / 100}`
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -76,12 +81,66 @@ export default function Landing() {
               <Link to="/builder">
                 <Button size="lg" className="w-full sm:w-auto">Start Drafting — Free</Button>
               </Link>
+              <Link to={`/boilerplates/${simpleTemplate.id}`}>
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                  Buy Simple Template — {simpleTemplatePrice}
+                </Button>
+              </Link>
               <Link to="/guide">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">How It Works</Button>
               </Link>
             </div>
             <LandingAuthActions className="mt-4" />
           </motion.div>
+        </section>
+
+        {/* Simple Template — pay & download Word doc */}
+        <section id="simple-template" className="py-20 border-y bg-primary/5">
+          <div className="container mx-auto px-4">
+            <motion.div
+              {...fadeIn}
+              className="max-w-3xl mx-auto rounded-2xl border-2 border-primary/20 bg-card p-8 md:p-10 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <Badge>Most popular</Badge>
+                <Badge variant="secondary">Word .docx</Badge>
+              </div>
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+                <div className="flex-1">
+                  <div className="rounded-full bg-primary/10 p-3 w-fit mb-4">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <h2 className="text-3xl font-bold">{simpleTemplate.name}</h2>
+                  <p className="text-muted-foreground mt-3">{simpleTemplate.description}</p>
+                  <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
+                    {simpleTemplate.highlights.map((item) => (
+                      <li key={item}>✓ {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="md:text-center md:min-w-[180px] shrink-0">
+                  <p className="text-4xl font-bold text-primary">{simpleTemplatePrice}</p>
+                  <p className="text-sm text-muted-foreground mt-1">one-time download</p>
+                  <Link to={`/boilerplates/${simpleTemplate.id}`} className="block mt-5">
+                    <Button size="lg" className="w-full">
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Buy &amp; Download
+                    </Button>
+                  </Link>
+                  <Link
+                    to="/boilerplates"
+                    className="block mt-3 text-sm text-primary hover:underline"
+                  >
+                    Browse all Word templates →
+                  </Link>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-6 pt-6 border-t">
+                Pay once, download an editable Word file. Open in Microsoft Word, Google Docs, or
+                LibreOffice — replace placeholder names and review every clause before use.
+              </p>
+            </motion.div>
+          </div>
         </section>
 
         {/* Who it's for */}
@@ -213,6 +272,11 @@ export default function Landing() {
                 </div>
                 <Link to="/pricing" className="block mt-6">
                   <Button className="w-full">Get Started</Button>
+                </Link>
+                <Link to={`/boilerplates/${simpleTemplate.id}`} className="block mt-3">
+                  <Button variant="outline" className="w-full">
+                    Buy Simple Template — {simpleTemplatePrice}
+                  </Button>
                 </Link>
                 <Link to="/pricing" className="block mt-2 text-center text-sm text-primary hover:underline">
                   View full pricing details
