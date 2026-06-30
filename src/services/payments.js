@@ -100,17 +100,18 @@ export function clearPendingPayment() {
   sessionStorage.removeItem(PENDING_PAYMENT_KEY)
 }
 
-export async function createDocumentCheckout(documentId, action) {
+export async function createDocumentCheckout(documentId, action, options = {}) {
   if (!isPaymentsConfigured()) {
     throw new Error('Payments not configured')
   }
 
-  setPendingPayment(documentId, action)
+  const { successPath, cancelPath, productLabel } = options
+  setPendingPayment(documentId, action, { successPath, cancelPath, productLabel })
 
   const response = await fetch(`${getFunctionsUrl()}/create-document-checkout`, {
     method: 'POST',
     headers: await getAuthHeaders(),
-    body: JSON.stringify({ documentId, action }),
+    body: JSON.stringify({ documentId, action, successPath, cancelPath, productLabel }),
   })
 
   if (!response.ok) {
@@ -141,7 +142,7 @@ export async function verifyDocumentPayment(sessionId) {
   return response.json()
 }
 
-export async function ensureDocumentAccess(documentId, action) {
+export async function ensureDocumentAccess(documentId, action, options = {}) {
   if (!isPaymentsConfigured()) {
     return { unlocked: true, offline: true }
   }
@@ -150,6 +151,6 @@ export async function ensureDocumentAccess(documentId, action) {
     return { unlocked: true, alreadyPaid: true }
   }
 
-  const url = await createDocumentCheckout(documentId, action)
+  const url = await createDocumentCheckout(documentId, action, options)
   return { unlocked: false, checkoutUrl: url }
 }

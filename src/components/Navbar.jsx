@@ -79,6 +79,7 @@ export default function Navbar({ variant = 'landing' }) {
             <a href="#agreements" className="text-muted-foreground hover:text-foreground transition-colors">Agreements</a>
             <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
             <Link to="/guide" className="text-muted-foreground hover:text-foreground transition-colors">Guide</Link>
+            <Link to="/boilerplates" className="text-muted-foreground hover:text-foreground transition-colors">Word Docs</Link>
             <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
             <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">About</Link>
             <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact</Link>

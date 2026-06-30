@@ -13,6 +13,7 @@ const routes = [
   '/contact',
   '/faq',
   '/pricing',
+  '/boilerplates',
   '/templates/revenue-sharing',
   '/templates/profit-sharing',
   '/templates/commission',

@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 
 const features = [
   'Free drafting and summary previews',
-  '$5 = PDF download for one agreement',
+  '$5 = PDF download for one custom agreement',
   '$5 = shareable read-only link',
+  '$5 = boilerplate Word document (.docx)',
   'Sign in with Google to save drafts across devices',
   'No subscriptions or credit packs',
 ]
@@ -37,6 +38,9 @@ export default function Pricing() {
           </div>
           <Link to="/builder" className="block mt-6">
             <Button className="w-full" size="lg">Start Drafting — Free</Button>
+          </Link>
+          <Link to="/boilerplates" className="block mt-3">
+            <Button variant="outline" className="w-full" size="lg">Browse Word Boilerplates</Button>
           </Link>
         </div>
 

@@ -43,9 +43,15 @@ export const routeSeo = {
   '/pricing': {
     title: 'Pricing',
     description:
-      '$5 per document to download or share. Free drafting and summary previews. Built for student and indie dev budgets.',
+      '$5 per document to download or share. $5 for boilerplate Word agreements. Free drafting and summary previews. Built for student and indie dev budgets.',
     index: true,
     jsonLd: [pricingOfferSchema()],
+  },
+  '/boilerplates': {
+    title: 'Boilerplate Word Agreements',
+    description:
+      'Purchase ready-made agreement templates as editable Word documents (.docx). Revenue sharing, NDAs, privacy policies, and more — $5 each.',
+    index: true,
   },
   '/templates/revenue-sharing': {
     title: 'Revenue Sharing Agreement Template',

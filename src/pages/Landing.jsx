@@ -177,10 +177,17 @@ export default function Landing() {
                 </motion.div>
               ))}
             </div>
-            <p className="text-center mt-6">
-              <Link to="/templates/nda" className="text-sm text-primary hover:underline font-medium">
-                Also available: NDA template for collaborators →
-              </Link>
+            <p className="text-center mt-6 space-y-2">
+              <span className="block">
+                <Link to="/templates/nda" className="text-sm text-primary hover:underline font-medium">
+                  Also available: NDA template for collaborators →
+                </Link>
+              </span>
+              <span className="block">
+                <Link to="/boilerplates" className="text-sm text-primary hover:underline font-medium">
+                  Or buy ready-made Word documents (.docx) — $5 each →
+                </Link>
+              </span>
             </p>
           </div>
         </section>
@@ -196,6 +203,7 @@ export default function Landing() {
                 <p className="text-muted-foreground mt-1 text-center">per document</p>
                 <ul className="mt-6 space-y-2 text-sm">
                   <li>✓ $5 = PDF download for one agreement</li>
+                  <li>✓ $5 = boilerplate Word document (.docx)</li>
                   <li>✓ $5 = shareable read-only link</li>
                   <li>✓ Free drafting &amp; summary previews</li>
                   <li>✓ Sign in with Google to save drafts</li>

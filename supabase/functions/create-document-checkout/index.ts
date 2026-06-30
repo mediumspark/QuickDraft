@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { documentId, action } = await req.json()
+    const { documentId, action, successPath, cancelPath, productLabel } = await req.json()
 
     if (!documentId || !['download', 'share'].includes(action)) {
       return new Response(JSON.stringify({ error: 'Invalid request' }), {
@@ -26,7 +26,10 @@ Deno.serve(async (req) => {
     })
 
     const origin = req.headers.get('origin') ?? Deno.env.get('SITE_URL') ?? ''
-    const actionLabel = action === 'download' ? 'PDF Download' : 'Share Link'
+    const defaultSuccess = successPath || '/builder'
+    const defaultCancel = cancelPath || '/builder'
+    const actionLabel = productLabel
+      || (action === 'download' ? 'PDF Download' : 'Share Link')
 
     const metadata: Record<string, string> = {
       document_id: documentId,
@@ -46,7 +49,9 @@ Deno.serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `AQuickDraft — ${actionLabel}`,
-              description: `Pay-per-document: ${actionLabel} for one agreement`,
+              description: productLabel
+                ? `Boilerplate Word document: ${actionLabel}`
+                : `Pay-per-document: ${actionLabel} for one agreement`,
             },
             unit_amount: DOCUMENT_PRICE_CENTS,
           },
@@ -54,8 +59,8 @@ Deno.serve(async (req) => {
         },
       ],
       metadata,
-      success_url: `${origin}/builder?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/builder?payment=cancelled`,
+      success_url: `${origin}${defaultSuccess}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}${defaultCancel}?payment=cancelled`,
     })
 
     return new Response(JSON.stringify({ url: session.url }), {

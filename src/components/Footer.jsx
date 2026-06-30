@@ -32,6 +32,7 @@ export default function Footer() {
             <h4 className="font-semibold mb-3">Product</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/builder" className="hover:text-foreground">Builder</Link></li>
+              <li><Link to="/boilerplates" className="hover:text-foreground">Word Boilerplates</Link></li>
               <li><Link to="/guide" className="hover:text-foreground">Guide</Link></li>
               <li><Link to="/pricing" className="hover:text-foreground">Pricing</Link></li>
               <li><Link to="/faq" className="hover:text-foreground">FAQ</Link></li>
