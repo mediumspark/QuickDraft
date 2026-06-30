@@ -2,7 +2,23 @@ import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { corsHeaders } from '../_shared/cors.ts'
 import { getAuthenticatedUser } from '../_shared/supabase.ts'
 
-const DOCUMENT_PRICE_CENTS = 500 // $5 per document action
+const DOCUMENT_PRICE_CENTS = 500 // $5 per builder document action
+const BOILERPLATE_LIST_PRICE_CENTS = 15000 // $150
+const BOILERPLATE_SALE_PRICE_CENTS = 500 // $5 launch sale
+const BOILERPLATE_SALE_END = '2026-07-21T23:59:59'
+
+function getBoilerplateCheckoutCents() {
+  return new Date() <= new Date(BOILERPLATE_SALE_END)
+    ? BOILERPLATE_SALE_PRICE_CENTS
+    : BOILERPLATE_LIST_PRICE_CENTS
+}
+
+function resolveUnitAmount(documentId: string) {
+  if (documentId.startsWith('boilerplate:')) {
+    return getBoilerplateCheckoutCents()
+  }
+  return DOCUMENT_PRICE_CENTS
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -40,6 +56,8 @@ Deno.serve(async (req) => {
       metadata.user_id = user.id
     }
 
+    const unitAmount = resolveUnitAmount(documentId)
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -53,7 +71,7 @@ Deno.serve(async (req) => {
                 ? `Boilerplate Word document: ${actionLabel}`
                 : `Pay-per-document: ${actionLabel} for one agreement`,
             },
-            unit_amount: DOCUMENT_PRICE_CENTS,
+            unit_amount: unitAmount,
           },
           quantity: 1,
         },

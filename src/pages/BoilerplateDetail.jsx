@@ -13,8 +13,10 @@ import {
   getBoilerplateAgreementData,
   getBoilerplateDocumentId,
   getBoilerplateFilename,
-  BOILERPLATE_PRICE_CENTS,
+  formatBoilerplatePrice,
+  getBoilerplatePriceCents,
 } from '@/data/boilerplateProducts'
+import BoilerplatePrice from '@/components/BoilerplatePrice'
 import { downloadAgreementDocx } from '@/utils/docxUtils'
 import {
   isPaymentsConfigured,
@@ -42,7 +44,7 @@ export default function BoilerplateDetail() {
     documentId ? isDocumentPaid(documentId, 'download') : false
   )
 
-  const priceLabel = `$${BOILERPLATE_PRICE_CENTS / 100}`
+  const priceLabel = formatBoilerplatePrice(getBoilerplatePriceCents())
 
   const executeDownload = React.useCallback(async () => {
     if (!product || !agreementData) return
@@ -172,8 +174,7 @@ export default function BoilerplateDetail() {
         <section className="rounded-xl border bg-card p-6 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-3xl font-bold text-primary">{priceLabel}</p>
-              <p className="text-sm text-muted-foreground">One-time · editable Word document</p>
+              <BoilerplatePrice size="md" />
               {paid && (
                 <p className="text-sm text-green-600 dark:text-green-400 mt-1">
                   Purchased — re-download anytime on this device

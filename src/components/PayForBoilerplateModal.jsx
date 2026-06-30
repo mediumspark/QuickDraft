@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { LegalDisclaimer } from '@/components/LegalDisclaimer'
-import { BOILERPLATE_PRICE_CENTS } from '@/data/boilerplateProducts'
+import BoilerplatePrice from '@/components/BoilerplatePrice'
+import { formatBoilerplatePrice, getBoilerplatePriceCents } from '@/data/boilerplateProducts'
 
 export default function PayForBoilerplateModal({
   open,
@@ -12,7 +13,7 @@ export default function PayForBoilerplateModal({
   onPay,
   loading,
 }) {
-  const price = (BOILERPLATE_PRICE_CENTS / 100).toFixed(0)
+  const price = formatBoilerplatePrice(getBoilerplatePriceCents())
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -23,7 +24,7 @@ export default function PayForBoilerplateModal({
             Pay to Download Word Doc
           </DialogTitle>
           <DialogDescription>
-            Pay ${price} once to download <strong>{productName}</strong> as an editable Word document (.docx).
+            Pay {price} once to download <strong>{productName}</strong> as an editable Word document (.docx).
             Re-downloading on this device is free after payment. Sign in to sync purchases across devices.
           </DialogDescription>
         </DialogHeader>
@@ -31,13 +32,13 @@ export default function PayForBoilerplateModal({
         <LegalDisclaimer variant="banner" />
 
         <div className="rounded-lg border bg-muted/30 p-4 text-center my-2">
-          <p className="text-3xl font-bold text-primary">${price}</p>
-          <p className="text-sm text-muted-foreground">one-time · .docx download</p>
+          <BoilerplatePrice size="sm" className="items-center" />
+          <p className="text-sm text-muted-foreground mt-2">one-time · .docx download</p>
         </div>
 
         <Button onClick={onPay} disabled={loading} className="w-full">
           {loading ? <Spinner size="sm" /> : null}
-          {loading ? 'Redirecting to checkout...' : `Pay $${price} & Download`}
+          {loading ? 'Redirecting to checkout...' : `Pay ${price} & Download`}
         </Button>
       </DialogContent>
     </Dialog>

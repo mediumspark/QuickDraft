@@ -5,11 +5,20 @@ import Footer from '@/components/Footer'
 import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { boilerplateProducts, BOILERPLATE_PRICE_CENTS } from '@/data/boilerplateProducts'
-
-const priceLabel = `$${BOILERPLATE_PRICE_CENTS / 100}`
+import { BoilerplatePriceInline } from '@/components/BoilerplatePrice'
+import {
+  boilerplateProducts,
+  formatBoilerplatePrice,
+  getBoilerplatePriceCents,
+  isBoilerplateOnSale,
+  BOILERPLATE_LIST_PRICE_CENTS,
+  getBoilerplateSaleEndLabel,
+} from '@/data/boilerplateProducts'
 
 export default function Boilerplates() {
+  const onSale = isBoilerplateOnSale()
+  const salePrice = formatBoilerplatePrice(getBoilerplatePriceCents())
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -18,7 +27,16 @@ export default function Boilerplates() {
           <h1 className="text-4xl font-bold mb-4">Boilerplate Word Agreements</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Skip the builder. Purchase a ready-made agreement template and download it as an editable
-            Word document (.docx) — {priceLabel} each, no subscription.
+            Word document (.docx).
+            {onSale ? (
+              <>
+                {' '}Launch sale: <BoilerplatePriceInline /> each (reg.{' '}
+                {formatBoilerplatePrice(BOILERPLATE_LIST_PRICE_CENTS)}) — ends{' '}
+                {getBoilerplateSaleEndLabel()}.
+              </>
+            ) : (
+              <> {salePrice} each, no subscription.</>
+            )}
           </p>
         </div>
 
@@ -35,8 +53,11 @@ export default function Boilerplates() {
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="secondary">Word .docx</Badge>
                   {product.featured && <Badge>Most popular</Badge>}
+                  {onSale && <Badge variant="outline">Sale</Badge>}
                 </div>
-                <span className="font-bold text-primary">{priceLabel}</span>
+                <span className="font-bold text-primary">
+                  <BoilerplatePriceInline />
+                </span>
               </div>
               <h2 className="text-xl font-semibold group-hover:text-primary transition-colors">
                 {product.name}

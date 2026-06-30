@@ -11,7 +11,8 @@ import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { getFeaturedBoilerplate, BOILERPLATE_PRICE_CENTS } from '@/data/boilerplateProducts'
+import { getFeaturedBoilerplate, formatBoilerplatePrice, getBoilerplatePriceCents, BOILERPLATE_LIST_PRICE_CENTS } from '@/data/boilerplateProducts'
+import BoilerplatePrice, { BoilerplatePriceInline } from '@/components/BoilerplatePrice'
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -52,7 +53,7 @@ const agreementTypes = [
 
 export default function Landing() {
   const simpleTemplate = getFeaturedBoilerplate()
-  const simpleTemplatePrice = `$${BOILERPLATE_PRICE_CENTS / 100}`
+  const simpleTemplatePrice = formatBoilerplatePrice(getBoilerplatePriceCents())
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -67,12 +68,11 @@ export default function Landing() {
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               AQuickDraft helps game developers, technical folks, and college students
-              draft revenue-sharing and partnership agreements fast — for $5 per document,
-              not hundreds in legal fees.
+              draft revenue-sharing and partnership agreements fast — without hundreds in legal fees.
             </p>
             <p className="mt-2 text-sm text-muted-foreground max-w-xl mx-auto">
-              Drafting and summary previews are free. Pay $5 to download or share.
-              Sign in with Google to save drafts across devices.
+              Drafting and summary previews are free. Word templates on sale now —{' '}
+              <BoilerplatePriceInline /> each (reg. {formatBoilerplatePrice(BOILERPLATE_LIST_PRICE_CENTS)}).
             </p>
             <div className="mt-4 max-w-2xl mx-auto">
               <LegalDisclaimer variant="banner" />
@@ -119,8 +119,7 @@ export default function Landing() {
                   </ul>
                 </div>
                 <div className="md:text-center md:min-w-[180px] shrink-0">
-                  <p className="text-4xl font-bold text-primary">{simpleTemplatePrice}</p>
-                  <p className="text-sm text-muted-foreground mt-1">one-time download</p>
+                  <BoilerplatePrice size="md" className="md:items-center" />
                   <Link to={`/boilerplates/${simpleTemplate.id}`} className="block mt-5">
                     <Button size="lg" className="w-full">
                       <FileDown className="h-4 w-4 mr-2" />
@@ -244,45 +243,10 @@ export default function Landing() {
               </span>
               <span className="block">
                 <Link to="/boilerplates" className="text-sm text-primary hover:underline font-medium">
-                  Or buy ready-made Word documents (.docx) — $5 each →
+                  Or buy ready-made Word documents (.docx) — <BoilerplatePriceInline /> each →
                 </Link>
               </span>
             </p>
-          </div>
-        </section>
-
-        {/* Pricing */}
-        <section id="pricing" className="bg-muted/30 py-20">
-          <div className="container mx-auto px-4 text-center">
-            <motion.div {...fadeIn}>
-              <h2 className="text-3xl font-bold">Cheap enough for student budgets</h2>
-              <p className="text-muted-foreground mt-2 mb-10">No subscriptions. $5 per document — pay only when you download or share.</p>
-              <div className="inline-block rounded-xl border bg-card p-8 shadow-sm max-w-sm text-left">
-                <p className="text-5xl font-bold text-primary text-center">$5</p>
-                <p className="text-muted-foreground mt-1 text-center">per document</p>
-                <ul className="mt-6 space-y-2 text-sm">
-                  <li>✓ $5 = PDF download for one agreement</li>
-                  <li>✓ $5 = boilerplate Word document (.docx)</li>
-                  <li>✓ $5 = shareable read-only link</li>
-                  <li>✓ Free drafting &amp; summary previews</li>
-                  <li>✓ Sign in with Google to save drafts</li>
-                </ul>
-                <div className="mt-4">
-                  <LegalDisclaimer variant="compact" />
-                </div>
-                <Link to="/pricing" className="block mt-6">
-                  <Button className="w-full">Get Started</Button>
-                </Link>
-                <Link to={`/boilerplates/${simpleTemplate.id}`} className="block mt-3">
-                  <Button variant="outline" className="w-full">
-                    Buy Simple Template — {simpleTemplatePrice}
-                  </Button>
-                </Link>
-                <Link to="/pricing" className="block mt-2 text-center text-sm text-primary hover:underline">
-                  View full pricing details
-                </Link>
-              </div>
-            </motion.div>
           </div>
         </section>
       </main>
