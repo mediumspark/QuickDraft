@@ -152,7 +152,7 @@ export default function Landing() {
           <div className="container mx-auto px-4">
             <motion.div {...fadeIn} className="text-center mb-12">
               <h2 className="text-3xl font-bold">Agreement templates we support</h2>
-              <p className="text-muted-foreground mt-2">Plus NDAs and fully custom clauses — all templates, not lawyer-drafted documents</p>
+              <p className="text-muted-foreground mt-2">Plus NDAs, Privacy Policies, EULAs, and fully custom clauses — all templates, not lawyer-drafted documents</p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {agreementTypes.map((a, i) => (

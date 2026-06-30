@@ -113,4 +113,84 @@ export const templates = [
       { id: '1', title: 'Return of Materials', body: 'Upon termination, each Party shall return or destroy all Confidential Information received from the other Party.' },
     ],
   }),
+  makeTemplate('privacy-website', 'Website Privacy Policy', 'privacy_policy', 'SaaS or website privacy policy with cookies and third-party services.', {
+    parties: {
+      partyA: { name: 'Your Company, Inc.', role: 'Data Controller', address: 'privacy@yourcompany.com' },
+      partyB: { name: 'Website Users', role: 'Users of our website and services', address: '' },
+      additional: [],
+    },
+    dispute: {
+      method: 'litigation',
+      arbitrationRules: '',
+      mediationStep: false,
+      governingState: 'California',
+      governingCountry: 'United States',
+    },
+    customClauses: [
+      { id: '1', title: 'Cookies and Tracking', body: 'We use cookies and similar technologies to analyze traffic, remember preferences, and improve user experience. You may control cookies through your browser settings.' },
+      { id: '2', title: 'Third-Party Services', body: 'We may use third-party analytics, payment, and hosting providers who process data on our behalf under contractual obligations consistent with this policy.' },
+    ],
+  }),
+  makeTemplate('privacy-mobile', 'Mobile App Privacy Policy', 'privacy_policy', 'Privacy policy for mobile apps with device permissions and analytics.', {
+    parties: {
+      partyA: { name: 'Your App, LLC', role: 'Data Controller', address: 'privacy@yourapp.com' },
+      partyB: { name: 'App Users', role: 'Users of our mobile application', address: '' },
+      additional: [],
+    },
+    dispute: {
+      method: 'litigation',
+      arbitrationRules: '',
+      mediationStep: false,
+      governingState: 'Delaware',
+      governingCountry: 'United States',
+    },
+    customClauses: [
+      { id: '1', title: 'Device Permissions', body: 'The app may request access to camera, location, contacts, or notifications solely to provide requested features. You may revoke permissions in your device settings.' },
+      { id: '2', title: 'Analytics', body: 'We use analytics tools to understand app usage and performance. Analytics data is aggregated and does not personally identify you unless you opt in to account-based tracking.' },
+    ],
+  }),
+  makeTemplate('eula-software', 'Software EULA', 'eula', 'Standard end-user license for downloadable software.', {
+    parties: {
+      partyA: { name: 'Your Software Co.', role: 'Licensor', address: 'legal@yoursoftware.com' },
+      partyB: { name: 'End User', role: 'Licensee', address: '' },
+      additional: [],
+    },
+    dispute: {
+      method: 'arbitration',
+      arbitrationRules: 'AAA Commercial Arbitration Rules',
+      mediationStep: false,
+      governingState: 'Delaware',
+      governingCountry: 'United States',
+    },
+    customClauses: [
+      { id: '1', title: 'Updates', body: 'Licensor may provide updates or patches. Updates are subject to this Agreement unless accompanied by separate terms.' },
+      { id: '2', title: 'Export Compliance', body: 'You agree to comply with all applicable export control laws and not to export or re-export the software to prohibited countries or persons.' },
+    ],
+  }),
+  makeTemplate('eula-saas', 'SaaS EULA', 'eula', 'License agreement for subscription-based SaaS products.', {
+    parties: {
+      partyA: { name: 'Your SaaS, Inc.', role: 'Licensor', address: 'legal@yoursaas.com' },
+      partyB: { name: 'Subscriber', role: 'Licensee', address: '' },
+      additional: [],
+    },
+    duration: {
+      startDate: '',
+      endDate: '',
+      autoRenewal: true,
+      renewalPeriod: '12 months',
+      terminationNoticeDays: 30,
+      terminationConditions: 'Either party may terminate for material breach upon 30 days written notice if the breach is not cured.',
+    },
+    dispute: {
+      method: 'mediation_arbitration',
+      arbitrationRules: 'AAA Commercial Arbitration Rules',
+      mediationStep: true,
+      governingState: 'California',
+      governingCountry: 'United States',
+    },
+    customClauses: [
+      { id: '1', title: 'Subscription Terms', body: 'Access is granted for the subscription term selected at purchase. Fees are billed in advance and are non-refundable except as required by law.' },
+      { id: '2', title: 'Service Level', body: 'Licensor will use commercially reasonable efforts to maintain 99.5% uptime, excluding scheduled maintenance and force majeure events.' },
+    ],
+  }),
 ]

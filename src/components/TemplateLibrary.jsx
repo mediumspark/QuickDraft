@@ -12,7 +12,7 @@ export default function TemplateLibrary({ open, onOpenChange, onSelect }) {
   const [filter, setFilter] = React.useState('')
   const [category, setCategory] = React.useState('all')
 
-  const categories = ['all', 'revenue_sharing', 'profit_sharing', 'commission_based', 'nda']
+  const categories = ['all', 'revenue_sharing', 'profit_sharing', 'commission_based', 'nda', 'privacy_policy', 'eula']
 
   const filtered = templates.filter((t) => {
     const matchCat = category === 'all' || t.type === category

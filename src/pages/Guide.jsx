@@ -6,7 +6,7 @@ import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 
 const steps = [
-  { num: '1', title: 'Choose your agreement type', desc: 'Select from Revenue Sharing, Profit Sharing, Commission-Based, or NDA templates.' },
+  { num: '1', title: 'Choose your agreement type', desc: 'Select from Revenue Sharing, Profit Sharing, Commission-Based, NDA, Privacy Policy, or EULA templates.' },
   { num: '2', title: 'Define the parties', desc: 'Enter names, roles, and addresses for Party A, Party B, and up to 4 additional partners.' },
   { num: '3', title: 'Set financial terms', desc: 'Configure percentages, payment frequency, thresholds, or commission rates.' },
   { num: '4', title: 'Add duration & dispute clauses', desc: 'Set start/end dates, auto-renewal, termination notice, and governing law.' },

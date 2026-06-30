@@ -14,8 +14,14 @@ export function getAgreementTypeLabel(type) {
     profit_sharing: 'Profit Sharing Agreement',
     commission_based: 'Commission-Based Agreement',
     nda: 'Non-Disclosure Agreement (NDA)',
+    privacy_policy: 'Privacy Policy',
+    eula: 'End User License Agreement (EULA)',
   }
   return labels[type] || 'Agreement'
+}
+
+function isNonFinancialType(type) {
+  return type === 'nda' || type === 'privacy_policy' || type === 'eula'
 }
 
 function formatParty(party, label) {
@@ -29,6 +35,7 @@ function formatParty(party, label) {
 function buildPartiesSection(agreement) {
   const lines = ['PARTIES', '']
   const { partyA, partyB, additional } = agreement.parties || {}
+  const type = agreement.type
 
   lines.push(...formatParty(partyA, 'Party A'))
   lines.push('')
@@ -43,9 +50,22 @@ function buildPartiesSection(agreement) {
   }
 
   lines.push('')
-  lines.push(
-    'The parties listed above (collectively, the "Parties" and individually, a "Party") enter into this Agreement as of the Effective Date set forth below.'
-  )
+  const companyName = partyA?.name || 'the Company'
+  const userLabel = partyB?.role || partyB?.name || 'end users'
+
+  if (type === 'privacy_policy') {
+    lines.push(
+      `${companyName} ("we", "us", or "our") provides services to ${userLabel} ("you"). This Privacy Policy describes how we collect, use, and share information when you use our services.`
+    )
+  } else if (type === 'eula') {
+    lines.push(
+      `${companyName} ("Licensor") grants a limited license to ${partyB?.name || 'the Licensee'} ("Licensee", "you") to use the software or digital product described in this Agreement, subject to the terms below.`
+    )
+  } else {
+    lines.push(
+      'The parties listed above (collectively, the "Parties" and individually, a "Party") enter into this Agreement as of the Effective Date set forth below.'
+    )
+  }
   return lines
 }
 
@@ -66,7 +86,7 @@ function buildFinancialSection(agreement) {
     return lines
   }
 
-  if (type === 'nda') {
+  if (isNonFinancialType(type)) {
     lines.push('This Agreement does not include financial compensation terms.')
     lines.push('')
     lines.push(
@@ -203,6 +223,83 @@ function buildNdaSection() {
   ]
 }
 
+function buildPrivacyPolicySection(agreement) {
+  const { partyA } = agreement.parties || {}
+  const company = partyA?.name || 'the Company'
+  const contact = partyA?.address || '[contact address or email]'
+
+  return [
+    'INFORMATION WE COLLECT',
+    '',
+    `We may collect information you provide directly to ${company}, including name, email address, account credentials, payment information, and any content you submit through our services.`,
+    '',
+    'We may also automatically collect usage data such as IP address, browser type, device identifiers, pages visited, and interaction timestamps.',
+    '',
+    'HOW WE USE YOUR INFORMATION',
+    '',
+    'We use collected information to provide, maintain, and improve our services; process transactions; communicate with you; ensure security; and comply with legal obligations.',
+    '',
+    'We do not sell your personal information to third parties.',
+    '',
+    'SHARING OF INFORMATION',
+    '',
+    'We may share information with service providers who assist in operating our services, with your consent, to comply with law, or to protect the rights and safety of users and the public.',
+    '',
+    'DATA SECURITY',
+    '',
+    'We implement reasonable administrative, technical, and organizational measures designed to protect your information. No method of transmission or storage is completely secure.',
+    '',
+    'YOUR RIGHTS',
+    '',
+    'Depending on your jurisdiction, you may have the right to access, correct, delete, or restrict processing of your personal information, and to opt out of certain communications.',
+    '',
+    "CHILDREN'S PRIVACY",
+    '',
+    'Our services are not directed to children under 13. We do not knowingly collect personal information from children under 13.',
+    '',
+    'CHANGES TO THIS POLICY',
+    '',
+    'We may update this Privacy Policy from time to time. We will post the revised policy and update the effective date. Continued use of our services after changes constitutes acceptance.',
+    '',
+    'CONTACT US',
+    '',
+    `If you have questions about this Privacy Policy, contact ${company} at: ${contact}`,
+  ]
+}
+
+function buildEulaSection(agreement) {
+  const { partyA } = agreement.parties || {}
+  const licensor = partyA?.name || 'the Licensor'
+
+  return [
+    'LICENSE GRANT',
+    '',
+    `${licensor} grants you a limited, non-exclusive, non-transferable, revocable license to install and use the software or digital product solely for your personal or internal business purposes, in accordance with this Agreement.`,
+    '',
+    'RESTRICTIONS',
+    '',
+    'You may not copy, modify, distribute, sell, lease, sublicense, reverse engineer, decompile, or create derivative works of the software except as expressly permitted by law.',
+    '',
+    'You may not remove or alter any proprietary notices or labels on the software.',
+    '',
+    'INTELLECTUAL PROPERTY',
+    '',
+    `The software and all related intellectual property rights remain the exclusive property of ${licensor}. No rights are granted except as expressly set forth herein.`,
+    '',
+    'DISCLAIMER OF WARRANTIES',
+    '',
+    'THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.',
+    '',
+    'LIMITATION OF LIABILITY',
+    '',
+    `TO THE MAXIMUM EXTENT PERMITTED BY LAW, ${licensor.toUpperCase()} SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SOFTWARE.`,
+    '',
+    'TERMINATION',
+    '',
+    'This license terminates automatically if you breach any term of this Agreement. Upon termination, you must cease all use and destroy all copies of the software in your possession.',
+  ]
+}
+
 export function buildAgreementText(agreement) {
   if (!agreement) return ''
 
@@ -223,6 +320,10 @@ export function buildAgreementText(agreement) {
 
   if (agreement.type === 'nda') {
     lines.push(...buildNdaSection(agreement))
+  } else if (agreement.type === 'privacy_policy') {
+    lines.push(...buildPrivacyPolicySection(agreement))
+  } else if (agreement.type === 'eula') {
+    lines.push(...buildEulaSection(agreement))
   } else {
     lines.push(...buildFinancialSection(agreement))
   }
@@ -276,8 +377,13 @@ export function buildAgreementSummary(agreement) {
   let financialSummary = 'Not specified'
   if (type === 'commission_based') {
     financialSummary = `${f.commissionRate || 0}% commission on ${f.commissionBasis || 'qualifying transactions'}`
-  } else if (type === 'nda') {
-    financialSummary = 'No financial terms (NDA)'
+  } else if (isNonFinancialType(type)) {
+    const labels = {
+      nda: 'No financial terms (NDA)',
+      privacy_policy: 'No financial terms (Privacy Policy)',
+      eula: 'No financial terms (EULA)',
+    }
+    financialSummary = labels[type] || 'No financial terms'
   } else {
     const basis = f.grossOrNet === 'net' ? 'Net' : 'Gross'
     const label = type === 'profit_sharing' ? 'profit' : 'revenue'
@@ -332,10 +438,15 @@ export function buildEmailSummary(agreement) {
   let financialSummary = ''
   if (agreement.type === 'commission_based') {
     financialSummary = `Commission: ${f.commissionRate}% on ${f.commissionBasis || 'qualifying transactions'}`
-  } else if (agreement.type !== 'nda') {
-    financialSummary = `Split: Party A ${f.partyAPercent}% / Party B ${f.partyBPercent}%, ${formatFrequency(f.paymentFrequency)}`
+  } else if (isNonFinancialType(agreement.type)) {
+    const labels = {
+      nda: 'NDA — no financial terms',
+      privacy_policy: 'Privacy Policy — no financial terms',
+      eula: 'EULA — no financial terms',
+    }
+    financialSummary = labels[agreement.type] || 'No financial terms'
   } else {
-    financialSummary = 'NDA — no financial terms'
+    financialSummary = `Split: Party A ${f.partyAPercent}% / Party B ${f.partyBPercent}%, ${formatFrequency(f.paymentFrequency)}`
   }
 
   return [

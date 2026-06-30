@@ -1,4 +1,4 @@
-import { TrendingUp, PieChart, HandCoins, Shield } from 'lucide-react'
+import { TrendingUp, PieChart, HandCoins, Shield, FileText, ScrollText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TYPES = [
@@ -26,11 +26,23 @@ const TYPES = [
     description: 'Protect confidential information shared between parties.',
     icon: Shield,
   },
+  {
+    id: 'privacy_policy',
+    label: 'Privacy Policy',
+    description: 'Website or app policy describing how you collect and use data.',
+    icon: FileText,
+  },
+  {
+    id: 'eula',
+    label: 'EULA',
+    description: 'End User License Agreement for software or digital products.',
+    icon: ScrollText,
+  },
 ]
 
 export default function AgreementTypeSelector({ value, onChange }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {TYPES.map(({ id, label, description, icon: Icon }) => (
         <button
           key={id}

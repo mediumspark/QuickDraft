@@ -10,7 +10,7 @@ export default function FinancialTermsClause({ type, financial, parties, onChang
   const additional = parties?.additional || []
   const isSharing = type === 'revenue_sharing' || type === 'profit_sharing'
   const isCommission = type === 'commission_based'
-  const isNda = type === 'nda'
+  const isNonFinancial = type === 'nda' || type === 'privacy_policy' || type === 'eula'
 
   const handlePercentChange = (field, val) => {
     const num = Math.min(100, Math.max(0, Number(val) || 0))
@@ -28,11 +28,21 @@ export default function FinancialTermsClause({ type, financial, parties, onChang
   const getAdditionalTotal = () =>
     additional.reduce((sum, p) => sum + (Number(p.percentage) || 0), 0)
 
-  if (isNda) {
+  if (isNonFinancial) {
+    const descriptions = {
+      nda: 'Non-disclosure agreements typically do not include financial terms. Add custom clauses if compensation is required.',
+      privacy_policy: 'Privacy policies do not include financial terms. Add custom clauses for payment or billing disclosures if needed.',
+      eula: 'EULAs do not include financial terms. Add custom clauses for pricing or subscription terms if needed.',
+    }
+    const titles = {
+      nda: 'Not applicable for NDAs',
+      privacy_policy: 'Not applicable for Privacy Policies',
+      eula: 'Not applicable for EULAs',
+    }
     return (
-      <CollapsibleSection title="Financial Terms" description="Not applicable for NDAs">
+      <CollapsibleSection title="Financial Terms" description={titles[type] || 'Not applicable'}>
         <p className="text-sm text-muted-foreground">
-          Non-disclosure agreements typically do not include financial terms. Add custom clauses if compensation is required.
+          {descriptions[type] || 'This document type does not include financial terms.'}
         </p>
       </CollapsibleSection>
     )
