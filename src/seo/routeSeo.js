@@ -108,6 +108,16 @@ export const routeSeo = {
     description: 'Draft and preview agreement templates.',
     index: false,
   },
+  '/payment/success': {
+    title: 'Payment Successful',
+    description: 'Your AQuickDraft purchase was successful.',
+    index: false,
+  },
+  '/payment/cancelled': {
+    title: 'Payment Cancelled',
+    description: 'Payment was cancelled.',
+    index: false,
+  },
   '/account': {
     title: 'Account',
     description: 'Your AQuickDraft account.',

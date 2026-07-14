@@ -6,6 +6,18 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }
 
+  // Browser / Stripe health checks — webhook is deployed; only signed POSTs are processed.
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    return new Response('AQuickDraft Stripe webhook is active. Use POST with a Stripe-Signature header.', {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' },
+    })
+  }
+
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 })
+  }
+
   const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
     apiVersion: '2023-10-16',
   })

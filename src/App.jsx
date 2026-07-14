@@ -12,6 +12,8 @@ import Guide from '@/pages/Guide'
 import Contact from '@/pages/Contact'
 import Faq from '@/pages/Faq'
 import Pricing from '@/pages/Pricing'
+import PaymentSuccess from '@/pages/PaymentSuccess'
+import PaymentCancelled from '@/pages/PaymentCancelled'
 import RevenueSharing from '@/pages/templates/RevenueSharing'
 import ProfitSharing from '@/pages/templates/ProfitSharing'
 import Commission from '@/pages/templates/Commission'
@@ -28,6 +30,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/builder" element={<Builder />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancelled" element={<PaymentCancelled />} />
             <Route path="/view/:id" element={<ViewAgreement />} />
             <Route path="/account" element={<Account />} />
             <Route path="/about" element={<About />} />
