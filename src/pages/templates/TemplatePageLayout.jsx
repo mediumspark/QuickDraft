@@ -59,7 +59,7 @@ export default function TemplatePageLayout({
         <section className="rounded-lg border bg-accent/50 p-6 mb-8">
           <p className="font-medium mb-2">Drafting is free. Summary previews are free.</p>
           <p className="text-sm text-muted-foreground mb-4">
-            Pay $5 to download a PDF or $5 to share a read-only link for this agreement.
+            Pay $5 to edit a saved draft, download a PDF, or share a read-only link for this agreement.
           </p>
           <LegalDisclaimer variant="compact" className="mb-4" />
           <div className="flex flex-wrap gap-3">

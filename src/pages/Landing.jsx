@@ -71,8 +71,10 @@ export default function Landing() {
               draft revenue-sharing and partnership agreements fast — without hundreds in legal fees.
             </p>
             <p className="mt-2 text-sm text-muted-foreground max-w-xl mx-auto">
-              Drafting and summary previews are free. Word templates on sale now —{' '}
+              Drafting and reading are free. Pay $5 to edit a saved draft, download, or share.
+              Word templates on sale now —{' '}
               <BoilerplatePriceInline /> each (reg. {formatBoilerplatePrice(BOILERPLATE_LIST_PRICE_CENTS)}).
+              {' '}Sign in with Google to save drafts across devices.
             </p>
             <div className="mt-4 max-w-2xl mx-auto">
               <LegalDisclaimer variant="banner" />

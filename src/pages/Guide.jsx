@@ -12,7 +12,7 @@ const steps = [
   { num: '4', title: 'Add duration & dispute clauses', desc: 'Set start/end dates, auto-renewal, termination notice, and governing law.' },
   { num: '5', title: 'Customize with extra clauses', desc: 'Add free-text provisions for non-compete, IP ownership, or any special terms.' },
   { num: '6', title: 'Preview carefully', desc: 'Review the live document preview. Read every clause — these are templates, not lawyer-drafted agreements.' },
-  { num: '7', title: 'Pay & download', desc: 'Pay $5 to download your PDF or $5 to generate a share link. Present to your partners only after you have read it through.' },
+  { num: '7', title: 'Pay when you need more', desc: 'Pay $5 to download your PDF, share a link, or unlock editing on a saved draft. Present to your partners only after you have read it through.' },
 ]
 
 export default function Guide() {

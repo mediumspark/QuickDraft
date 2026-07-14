@@ -79,8 +79,8 @@ export default function Account() {
         <main className="flex-1 container mx-auto px-4 py-16 text-center max-w-lg">
           <h1 className="text-2xl font-bold mb-4">Account</h1>
           <p className="text-muted-foreground">
-            Sign in requires Supabase to be configured. You can still draft agreements and see
-            summary previews without an account.
+            Sign in requires Supabase to be configured. You can still draft agreements and read
+            the full text without an account.
           </p>
           <Link to="/builder" className="inline-block mt-6">
             <Button>Start Drafting</Button>
@@ -99,7 +99,7 @@ export default function Account() {
           <h1 className="text-2xl font-bold mb-4">Your Account</h1>
           <p className="text-muted-foreground mb-6">
             Sign in with Google to save drafts across devices and access your purchase history.
-            Drafting and summary previews remain free.
+            Drafting and reading remain free.
           </p>
           <Button onClick={() => setAuthOpen(true)}>Continue with Google</Button>
           <AuthModal open={authOpen} onOpenChange={setAuthOpen} redirectPath="/account" />
@@ -181,8 +181,8 @@ export default function Account() {
               {payments.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground text-sm">
-                    No purchases yet. Pay $5 per document to download or share — summary previews
-                    are always free before you buy.
+                    No purchases yet. Pay $5 per document to edit, download, or share — drafting
+                    and reading are always free.
                   </CardContent>
                 </Card>
               ) : (
@@ -192,7 +192,13 @@ export default function Account() {
                       <CardHeader className="py-4">
                         <div className="flex items-center justify-between gap-2">
                           <CardTitle className="text-base font-medium">
-                            {payment.action === 'download' ? 'PDF Download' : 'Share Link'}
+                            {payment.action === 'download'
+                              ? 'PDF Download'
+                              : payment.action === 'share'
+                                ? 'Share Link'
+                                : payment.action === 'edit'
+                                  ? 'Edit Unlock'
+                                  : payment.action}
                           </CardTitle>
                           <Badge variant="secondary">
                             ${(payment.amount_cents / 100).toFixed(2)}

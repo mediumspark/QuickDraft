@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   try {
     const { documentId, action, successPath, cancelPath, productLabel } = await req.json()
 
-    if (!documentId || !['download', 'share'].includes(action)) {
+    if (!documentId || !['edit', 'download', 'share'].includes(action)) {
       return new Response(JSON.stringify({ error: 'Invalid request' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -41,11 +41,11 @@ Deno.serve(async (req) => {
       apiVersion: '2023-10-16',
     })
 
-    const origin = req.headers.get('origin') ?? Deno.env.get('SITE_URL') ?? ''
-    const defaultSuccess = successPath || '/builder'
-    const defaultCancel = cancelPath || '/builder'
+    const origin = (Deno.env.get('SITE_URL') || req.headers.get('origin') || 'https://www.aquickdraft.com').replace(/\/$/, '')
+    const defaultSuccess = successPath || '/payment/success'
+    const defaultCancel = cancelPath || '/payment/cancelled'
     const actionLabel = productLabel
-      || (action === 'download' ? 'PDF Download' : 'Share Link')
+      || (action === 'download' ? 'PDF Download' : action === 'share' ? 'Share Link' : 'Edit Unlock')
 
     const metadata: Record<string, string> = {
       document_id: documentId,
@@ -57,6 +57,9 @@ Deno.serve(async (req) => {
     }
 
     const unitAmount = resolveUnitAmount(documentId)
+
+    const successQuery = defaultSuccess.includes('?') ? '&' : '?'
+    const cancelQuery = defaultCancel.includes('?') ? '&' : '?'
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -77,8 +80,8 @@ Deno.serve(async (req) => {
         },
       ],
       metadata,
-      success_url: `${origin}${defaultSuccess}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}${defaultCancel}?payment=cancelled`,
+      success_url: `${origin}${defaultSuccess}${successQuery}payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}${defaultCancel}${cancelQuery}payment=cancelled`,
     })
 
     return new Response(JSON.stringify({ url: session.url }), {

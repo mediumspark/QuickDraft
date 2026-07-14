@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ChevronDown, Share2 } from 'lucide-react'
+import { ChevronDown, Share2, Unlock } from 'lucide-react'
 import { BuilderNavbar } from '@/components/Navbar'
 import AgreementTypeSelector from '@/components/clauses/AgreementTypeSelector'
 import PartiesClause from '@/components/clauses/PartiesClause'
@@ -29,6 +29,7 @@ import { saveDraftToBackend, enableSharing, loadUserDraftById } from '@/services
 import {
   isPaymentsConfigured,
   isDocumentPaid,
+  canEditDocument,
   markDocumentPaid,
   ensureDocumentAccess,
   verifyDocumentPayment,
@@ -62,6 +63,8 @@ export default function Builder() {
   const [payModalOpen, setPayModalOpen] = React.useState(false)
   const [pendingAction, setPendingAction] = React.useState('download')
   const [pendingWithSignatures, setPendingWithSignatures] = React.useState(false)
+  // Saved drafts opened from account start view-only until edit is unlocked.
+  const [editLocked, setEditLocked] = React.useState(false)
 
   React.useEffect(() => {
     if (!draft.sessionId) {
@@ -95,7 +98,11 @@ export default function Builder() {
       }
       setDraft(data)
       setSavedId(data.id)
-      addToast('Draft loaded from your account')
+      const docId = data.id || data.sessionId
+      const unlocked =
+        !isPaymentsConfigured() || canEditDocument(docId)
+      setEditLocked(!unlocked)
+      addToast(unlocked ? 'Draft loaded from your account' : 'Draft loaded — viewing is free. Pay $5 to edit.')
       const next = new URLSearchParams(searchParams)
       next.delete('draft')
       setSearchParams(next, { replace: true })
@@ -105,7 +112,10 @@ export default function Builder() {
     return () => { cancelled = true }
   }, [draftId, user])
 
-  const updateDraft = (patch) => setDraft((d) => ({ ...d, ...patch }))
+  const updateDraft = (patch) => {
+    if (editLocked) return
+    setDraft((d) => ({ ...d, ...patch }))
+  }
 
   const getDocumentId = React.useCallback(() => {
     return draft.id || draft.sessionId || getOrCreateSessionId()
@@ -163,12 +173,15 @@ export default function Builder() {
           markDocumentPaid(result.documentId, result.action)
           addAuditEntry('payment_purchase', `Paid for ${result.action}`, result.documentId)
           addToast('Payment successful!')
+          setEditLocked(false)
 
           const pending = getPendingPayment()
           if (result.action === 'download') {
             await executeDownload(pending?.withSignatures ?? false)
           } else if (result.action === 'share') {
             await executeShare()
+          } else if (result.action === 'edit') {
+            addToast('Editing unlocked for this agreement')
           }
         }
       } catch {
@@ -235,6 +248,12 @@ export default function Builder() {
   }
 
   const handleSave = async () => {
+    if (editLocked) {
+      addToast('Pay $5 to unlock editing before saving changes.', 'info')
+      setPendingAction('edit')
+      setPayModalOpen(true)
+      return
+    }
     setSaving(true)
     try {
       const { data, error, offline } = await saveDraftToBackend(draft)
@@ -278,22 +297,37 @@ export default function Builder() {
     }
   }
 
+  const handleUnlockEdit = async () => {
+    const allowed = await gateAction('edit')
+    if (allowed) {
+      setEditLocked(false)
+    }
+  }
+
   const loadTemplate = (data) => {
+    if (editLocked) {
+      addToast('Pay $5 to unlock editing before loading a template.', 'info')
+      setPendingAction('edit')
+      setPayModalOpen(true)
+      return
+    }
     setDraft({ ...data, sessionId: draft.sessionId, id: savedId })
     addAuditEntry('type_change', 'Template loaded', data.type)
     addToast('Template loaded')
   }
 
   const restoreVersion = (data) => {
+    if (editLocked) {
+      addToast('Pay $5 to unlock editing before restoring a version.', 'info')
+      setPendingAction('edit')
+      setPayModalOpen(true)
+      return
+    }
     setDraft({ ...data, sessionId: draft.sessionId })
     addToast('Version restored')
   }
 
   const documentId = getDocumentId()
-  const previewUnlocked =
-    !isPaymentsConfigured() ||
-    isDocumentPaid(documentId, 'download') ||
-    isDocumentPaid(documentId, 'share')
   const signaturesUnlocked =
     !isPaymentsConfigured() || isDocumentPaid(documentId, 'download')
 
@@ -312,7 +346,7 @@ export default function Builder() {
 
       <div className="bg-accent border-b px-4 py-2 text-sm text-center text-accent-foreground">
         {isPaymentsConfigured()
-          ? 'Drafting and summary previews are free. Pay $5 per document to download or share.'
+          ? 'Drafting and reading are free. Pay $5 to edit a saved draft, download, or share.'
           : 'Agreement templates for game devs, technical folks & students — not lawyer-drafted documents.'}
         {isPaymentsConfigured() && (user ? ' Your purchases sync to your account.' : ' Sign in to save drafts across devices.')}
       </div>
@@ -321,48 +355,62 @@ export default function Builder() {
         <LegalDisclaimer variant="compact" className="text-center" />
       </div>
 
+      {editLocked && (
+        <div className="border-b bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <span>
+            Viewing is free. This saved draft is locked — pay $5 to unlock editing.
+          </span>
+          <Button size="sm" onClick={handleUnlockEdit} disabled={paying}>
+            {paying ? <Spinner size="sm" /> : <Unlock className="h-4 w-4" />}
+            Unlock Editing ($5)
+          </Button>
+        </div>
+      )}
+
       <div className="flex-1 container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1 space-y-4 min-w-0">
-            <AgreementNotes />
+            <div className={editLocked ? 'pointer-events-none opacity-60 select-none space-y-4' : 'space-y-4'}>
+              <AgreementNotes />
 
-            <div className="rounded-lg border bg-card p-4">
-              <h2 className="font-semibold mb-3">Agreement Type</h2>
-              <AgreementTypeSelector value={draft.type} onChange={handleTypeChange} />
+              <div className="rounded-lg border bg-card p-4">
+                <h2 className="font-semibold mb-3">Agreement Type</h2>
+                <AgreementTypeSelector value={draft.type} onChange={handleTypeChange} />
+              </div>
+
+              <PartiesClause
+                parties={draft.parties}
+                onChange={handlePartiesChange}
+                onChangeAdditional={(additional) =>
+                  handlePartiesChange({ ...draft.parties, additional })
+                }
+              />
+
+              <FinancialTermsClause
+                type={draft.type}
+                financial={draft.financial}
+                parties={draft.parties}
+                onChange={handleFinancialChange}
+              />
+
+              <DurationClause
+                duration={draft.duration}
+                onChange={(duration) => updateDraft({ duration })}
+              />
+
+              <DisputeClause
+                dispute={draft.dispute}
+                onChange={(dispute) => updateDraft({ dispute })}
+              />
+
+              <CustomClausesClause
+                clauses={draft.customClauses}
+                onChange={(customClauses) => updateDraft({ customClauses })}
+              />
             </div>
 
-            <PartiesClause
-              parties={draft.parties}
-              onChange={handlePartiesChange}
-              onChangeAdditional={(additional) =>
-                handlePartiesChange({ ...draft.parties, additional })
-              }
-            />
-
-            <FinancialTermsClause
-              type={draft.type}
-              financial={draft.financial}
-              parties={draft.parties}
-              onChange={handleFinancialChange}
-            />
-
-            <DurationClause
-              duration={draft.duration}
-              onChange={(duration) => updateDraft({ duration })}
-            />
-
-            <DisputeClause
-              dispute={draft.dispute}
-              onChange={(dispute) => updateDraft({ dispute })}
-            />
-
-            <CustomClausesClause
-              clauses={draft.customClauses}
-              onChange={(customClauses) => updateDraft({ customClauses })}
-            />
-
             <div className="flex flex-wrap gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setTemplatesOpen(true)}>
+              <Button variant="outline" size="sm" onClick={() => setTemplatesOpen(true)} disabled={editLocked}>
                 Templates
               </Button>
               <Button variant="outline" size="sm" onClick={() => setVersionsOpen(true)}>
@@ -371,7 +419,12 @@ export default function Builder() {
               <Button variant="outline" size="sm" onClick={() => setAuditOpen(true)}>
                 Audit Log
               </Button>
-              <Button variant="outline" size="sm" onClick={handleShare} disabled={sharing || paying}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+                disabled={sharing || paying}
+              >
                 {sharing ? <Spinner size="sm" /> : <Share2 className="h-4 w-4" />}
                 Share Link ($5)
               </Button>
@@ -383,9 +436,8 @@ export default function Builder() {
               <AgreementPreview
                 agreement={draft}
                 signatures={signatures}
-                onSignaturesChange={setSignatures}
-                unlocked={previewUnlocked}
-                signaturesUnlocked={signaturesUnlocked}
+                onSignaturesChange={editLocked ? undefined : setSignatures}
+                signaturesUnlocked={signaturesUnlocked && !editLocked}
               />
             </div>
           </div>
@@ -401,9 +453,8 @@ export default function Builder() {
           <AgreementPreview
             agreement={draft}
             signatures={signatures}
-            onSignaturesChange={setSignatures}
-            unlocked={previewUnlocked}
-            signaturesUnlocked={signaturesUnlocked}
+            onSignaturesChange={editLocked ? undefined : setSignatures}
+            signaturesUnlocked={signaturesUnlocked && !editLocked}
           />
         </div>
       </details>

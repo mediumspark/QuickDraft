@@ -4,9 +4,26 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 
+const ACTION_COPY = {
+  edit: {
+    title: 'Pay to Edit',
+    label: 'unlock editing for this agreement',
+    after: ' Further edits on this device are free after payment. Sign in to sync purchases across devices.',
+  },
+  download: {
+    title: 'Pay to Download',
+    label: 'download this PDF',
+    after: ' Re-downloading on this device is free after payment. Sign in to sync purchases across devices.',
+  },
+  share: {
+    title: 'Pay to Share',
+    label: 'share this agreement',
+    after: ' Re-copying the share link on this device is free after payment. Sign in to sync purchases across devices.',
+  },
+}
+
 export default function PayForDocumentModal({ open, onOpenChange, action = 'download', onPay, loading }) {
-  const actionLabel = action === 'share' ? 'share this agreement' : 'download this PDF'
-  const title = action === 'share' ? 'Pay to Share' : 'Pay to Download'
+  const copy = ACTION_COPY[action] || ACTION_COPY.download
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -14,14 +31,11 @@ export default function PayForDocumentModal({ open, onOpenChange, action = 'down
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            {title}
+            {copy.title}
           </DialogTitle>
           <DialogDescription>
-            Pay $5 once to {actionLabel}. Summary previews are always free before you buy.
-            {action === 'share'
-              ? ' Re-copying the share link on this device is free after payment.'
-              : ' Re-downloading on this device is free after payment.'}
-            {' '}Sign in to sync purchases across devices.
+            Pay $5 once to {copy.label}. Drafting and reading the full agreement are always free.
+            {copy.after}
           </DialogDescription>
         </DialogHeader>
 
@@ -29,7 +43,7 @@ export default function PayForDocumentModal({ open, onOpenChange, action = 'down
 
         <div className="rounded-lg border bg-muted/30 p-4 text-center my-2">
           <p className="text-3xl font-bold text-primary">$5</p>
-          <p className="text-sm text-muted-foreground">per document</p>
+          <p className="text-sm text-muted-foreground">per document action</p>
         </div>
 
         <Button onClick={onPay} disabled={loading} className="w-full">

@@ -14,7 +14,7 @@ export const faqItems = [
   {
     question: 'How much does AQuickDraft cost?',
     answer:
-      'Drafting and summary previews are free. Pay $5 per document to download a PDF or $5 to generate a shareable link. No subscriptions.',
+      'Drafting and reading the full agreement are free. Pay $5 per document to edit a saved draft, download a PDF, or generate a shareable link. No subscriptions.',
   },
   {
     question: 'Do I still need a lawyer?',
@@ -24,7 +24,7 @@ export const faqItems = [
   {
     question: 'Can I preview an agreement before paying?',
     answer:
-      'Yes. You can draft agreements and view a summary preview for free. Full legal text unlocks after you pay $5 to download or share.',
+      'Yes. You can draft agreements and read the full legal text for free. Paying unlocks editing saved drafts, PDF download, or sharing.',
   },
   {
     question: 'What agreement types are supported?',
@@ -39,8 +39,8 @@ export const guideSteps = [
   { name: 'Set financial terms', text: 'Configure percentages, payment frequency, thresholds, or commission rates.' },
   { name: 'Add duration and dispute clauses', text: 'Set start/end dates, auto-renewal, termination notice, and governing law.' },
   { name: 'Customize with extra clauses', text: 'Add free-text provisions for non-compete, IP ownership, or special terms.' },
-  { name: 'Preview carefully', text: 'Review the live document preview. Read every clause before sharing.' },
-  { name: 'Pay and download', text: 'Pay $5 to download your PDF or $5 to generate a share link.' },
+  { name: 'Preview carefully', text: 'Review the full live document preview. Read every clause before sharing.' },
+  { name: 'Pay and download', text: 'Pay $5 to download your PDF, share a link, or unlock editing on a saved draft.' },
 ]
 
 export function organizationSchema() {
@@ -64,7 +64,7 @@ export function softwareApplicationSchema() {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'USD',
-      description: 'Free drafting and summary previews. $5 per document download or share.',
+      description: 'Free drafting and full agreement reading. $5 to edit, download, or share.',
     },
     description: siteConfig.defaultDescription,
     url: siteConfig.url,
@@ -105,10 +105,10 @@ export function pricingOfferSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Offer',
-    name: 'AQuickDraft per-document download or share',
+    name: 'AQuickDraft per-document edit, download, or share',
     price: '5.00',
     priceCurrency: 'USD',
-    description: '$5 per document to download a PDF or generate a shareable link. Drafting is free.',
+    description: '$5 per document to edit a saved draft, download a PDF, or generate a shareable link. Drafting and reading are free.',
     url: `${siteConfig.url}/pricing`,
     seller: {
       '@type': 'Organization',

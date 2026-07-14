@@ -12,7 +12,8 @@ import {
 } from '@/data/boilerplateProducts'
 
 const builderFeatures = [
-  'Free drafting and summary previews',
+  'Free drafting and full agreement reading',
+  '$5 = edit a saved draft',
   '$5 = PDF download for one custom agreement',
   '$5 = shareable read-only link',
   'Sign in with Google to save drafts across devices',
@@ -29,7 +30,8 @@ export default function Pricing() {
         <h1 className="text-4xl font-bold mb-4">Simple, student-friendly pricing</h1>
         <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
           Built for game developers, technical folks, and college students who need
-          agreement templates without a lawyer bill. Pay only when you download or share.
+          agreement templates without a lawyer bill. Draft and read free — pay only
+          to edit, download, or share.
         </p>
         <LegalDisclaimer variant="banner" className="mb-10 max-w-2xl mx-auto text-left" />
 
@@ -38,7 +40,7 @@ export default function Pricing() {
             <h2 className="text-lg font-semibold mb-1">Agreement Builder</h2>
             <p className="text-sm text-muted-foreground mb-4">Customize online, export PDF</p>
             <p className="text-5xl font-bold text-primary text-center">$5</p>
-            <p className="text-muted-foreground mt-1 text-center text-sm">per download or share</p>
+            <p className="text-muted-foreground mt-1 text-center text-sm">per edit, download, or share</p>
             <ul className="mt-6 space-y-2 text-sm">
               {builderFeatures.map((f) => (
                 <li key={f}>✓ {f}</li>

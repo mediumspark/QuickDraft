@@ -11,7 +11,7 @@ export const routeSeo = {
   '/': {
     title: 'Agreement Templates for Devs & Students',
     description:
-      'Agreement templates for game developers, technical folks, and college students. Draft free, pay $5 to download. Templates only — not created by lawyers.',
+      'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $5 to edit, download, or share. Templates only — not created by lawyers.',
     index: true,
     jsonLd: homeSchemas(),
   },
@@ -43,7 +43,7 @@ export const routeSeo = {
   '/pricing': {
     title: 'Pricing',
     description:
-      '$5 per document to download or share. $5 for boilerplate Word agreements. Free drafting and summary previews. Built for student and indie dev budgets.',
+      '$5 per document to edit, download, or share. $5 for boilerplate Word agreements. Free drafting and full reading. Built for student and indie dev budgets.',
     index: true,
     jsonLd: [pricingOfferSchema()],
   },
@@ -62,7 +62,7 @@ export const routeSeo = {
   '/templates/revenue-sharing': {
     title: 'Revenue Sharing Agreement Template',
     description:
-      'Free revenue sharing agreement template for game developers and technical collaborators. Split game sales, DLC, or merch revenue. $5 to download.',
+      'Free revenue sharing agreement template for game developers and technical collaborators. Split game sales, DLC, or merch revenue. Draft and read free; $5 to edit, download, or share.',
     index: true,
     jsonLd: [templatePageSchema({
       name: 'Revenue Sharing Agreement Template',

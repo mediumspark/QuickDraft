@@ -48,10 +48,18 @@ function savePaidDocuments(data) {
   localStorage.setItem(PAID_DOCUMENTS_KEY, JSON.stringify(data))
 }
 
+export const PAID_ACTIONS = ['edit', 'download', 'share']
+
 export function isDocumentPaid(documentId, action) {
   if (!documentId) return false
   const paid = loadPaidDocuments()
   return !!paid[documentId]?.[action]
+}
+
+/** Any paid action on a document unlocks further editing. */
+export function canEditDocument(documentId) {
+  if (!documentId) return false
+  return PAID_ACTIONS.some((action) => isDocumentPaid(documentId, action))
 }
 
 export function markDocumentPaid(documentId, action) {

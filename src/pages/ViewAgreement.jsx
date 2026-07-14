@@ -83,7 +83,6 @@ export default function ViewAgreement() {
           agreement={agreement}
           signatures={signatures}
           onSignaturesChange={setSignatures}
-          unlocked
           signaturesUnlocked
           readOnly={false}
         />
