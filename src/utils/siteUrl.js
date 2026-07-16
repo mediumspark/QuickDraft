@@ -1,27 +1,25 @@
 /**
- * Canonical app URL for SEO, sitemaps, and dashboard setup.
- * Set VITE_SITE_URL in production builds (e.g. https://www.aquickdraft.com).
+ * Canonical production URL for SEO, OAuth redirects, and absolute links.
+ * Always resolves to the live site — never localhost.
  */
+const PRODUCTION_URL = 'https://www.aquickdraft.com'
+
 export function getSiteUrl() {
-  const configured = import.meta.env.VITE_SITE_URL
-  if (configured && !configured.includes('your-site') && !configured.includes('localhost')) {
-    return configured.replace(/\/$/, '')
+  const configured = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '')
+  if (
+    configured &&
+    !configured.includes('your-site') &&
+    !configured.includes('localhost') &&
+    !configured.includes('127.0.0.1')
+  ) {
+    return configured
   }
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin.replace(/\/$/, '')
-  }
-  return 'https://www.aquickdraft.com'
+  return PRODUCTION_URL
 }
 
-/**
- * OAuth return URL. Always use the host the user is currently on so production
- * sign-in never sends people to localhost (and local dev stays on localhost).
- */
+/** Google / Supabase OAuth must always return users to the live site. */
 export function getAuthRedirectUrl(path = '/') {
-  const base =
-    typeof window !== 'undefined' && window.location?.origin
-      ? window.location.origin.replace(/\/$/, '')
-      : getSiteUrl()
+  const base = getSiteUrl()
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   return `${base}${normalizedPath}`
 }
