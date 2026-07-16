@@ -132,9 +132,11 @@ export default function BoilerplateDetail() {
     try {
       setPendingPayment(documentId, 'download', { returnType: 'boilerplate', productId: product.id })
       const result = await ensureDocumentAccess(documentId, 'download', {
-        successPath: `/boilerplates/${product.id}`,
+        successPath: '/payment/success',
         cancelPath: `/boilerplates/${product.id}`,
         productLabel: `${product.name} (Word)`,
+        returnType: 'boilerplate',
+        productId: product.id,
       })
       if (result.checkoutUrl) {
         window.location.href = result.checkoutUrl

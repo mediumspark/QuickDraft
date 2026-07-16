@@ -113,8 +113,16 @@ export async function createDocumentCheckout(documentId, action, options = {}) {
     throw new Error('Payments not configured')
   }
 
-  const { successPath, cancelPath, productLabel } = options
-  setPendingPayment(documentId, action, { successPath, cancelPath, productLabel })
+  const { successPath, cancelPath, productLabel, ...extra } = options
+  // Merge so callers can keep returnType / productId / withSignatures across checkout.
+  const previous = getPendingPayment() || {}
+  setPendingPayment(documentId, action, {
+    ...previous,
+    ...extra,
+    successPath,
+    cancelPath,
+    productLabel,
+  })
 
   const response = await fetch(`${getFunctionsUrl()}/create-document-checkout`, {
     method: 'POST',

@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { FileText, CreditCard, LogOut } from 'lucide-react'
+import { FileText, CreditCard, LogOut, FileDown } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { Button } from '@/components/ui/button'
@@ -8,9 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import AuthModal from '@/components/AuthModal'
 import { Spinner } from '@/components/ui/spinner'
+import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { listUserAgreements, listUserPayments } from '@/services/supabase'
 import { getAgreementTypeLabel } from '@/utils/agreementUtils'
+import {
+  getBoilerplateProduct,
+  getBoilerplateAgreementData,
+  getBoilerplateFilename,
+} from '@/data/boilerplateProducts'
+import { downloadAgreementDocx } from '@/utils/docxUtils'
+import { markDocumentPaid } from '@/services/payments'
 
 function formatDate(iso) {
   if (!iso) return '—'
@@ -31,10 +39,12 @@ function draftTitle(draft) {
 
 export default function Account() {
   const { user, loading: authLoading, signOut, isAuthConfigured } = useAuth()
+  const { addToast } = useToast()
   const [authOpen, setAuthOpen] = React.useState(false)
   const [drafts, setDrafts] = React.useState([])
   const [payments, setPayments] = React.useState([])
   const [loading, setLoading] = React.useState(true)
+  const [downloadingId, setDownloadingId] = React.useState(null)
 
   React.useEffect(() => {
     if (!user) {
@@ -48,13 +58,52 @@ export default function Account() {
         listUserAgreements(),
         listUserPayments(),
       ])
+      const paymentRows = paymentsResult.data || []
       setDrafts(draftsResult.data || [])
-      setPayments(paymentsResult.data || [])
+      setPayments(paymentRows)
+      for (const payment of paymentRows) {
+        if (payment.document_id && payment.action) {
+          markDocumentPaid(payment.document_id, payment.action)
+        }
+      }
       setLoading(false)
     }
 
     load()
   }, [user])
+
+  const handleBoilerplateDownload = async (documentId) => {
+    const productId = documentId?.startsWith('boilerplate:')
+      ? documentId.slice('boilerplate:'.length)
+      : null
+    const product = productId ? getBoilerplateProduct(productId) : null
+    const agreementData = product ? getBoilerplateAgreementData(product) : null
+    if (!product || !agreementData) {
+      addToast('Template not found for this purchase', 'error')
+      return
+    }
+    setDownloadingId(documentId)
+    try {
+      await downloadAgreementDocx(agreementData, getBoilerplateFilename(product))
+      markDocumentPaid(documentId, 'download')
+      addToast('Word document downloaded')
+    } catch {
+      addToast('Download failed', 'error')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  const paymentTitle = (payment) => {
+    if (payment.document_id?.startsWith('boilerplate:')) {
+      const id = payment.document_id.slice('boilerplate:'.length)
+      return getBoilerplateProduct(id)?.name || 'Word boilerplate'
+    }
+    if (payment.action === 'download') return 'PDF Download'
+    if (payment.action === 'share') return 'Share Link'
+    if (payment.action === 'edit') return 'Edit Unlock'
+    return payment.action
+  }
 
   const handleSignOut = async () => {
     try {
@@ -192,13 +241,7 @@ export default function Account() {
                       <CardHeader className="py-4">
                         <div className="flex items-center justify-between gap-2">
                           <CardTitle className="text-base font-medium">
-                            {payment.action === 'download'
-                              ? 'PDF Download'
-                              : payment.action === 'share'
-                                ? 'Share Link'
-                                : payment.action === 'edit'
-                                  ? 'Edit Unlock'
-                                  : payment.action}
+                            {paymentTitle(payment)}
                           </CardTitle>
                           <Badge variant="secondary">
                             ${(payment.amount_cents / 100).toFixed(2)}
@@ -207,6 +250,23 @@ export default function Account() {
                         <p className="text-sm text-muted-foreground">
                           {formatDate(payment.created_at)}
                         </p>
+                        {payment.document_id?.startsWith('boilerplate:') && (
+                          <div className="pt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={downloadingId === payment.document_id}
+                              onClick={() => handleBoilerplateDownload(payment.document_id)}
+                            >
+                              {downloadingId === payment.document_id ? (
+                                <Spinner size="sm" />
+                              ) : (
+                                <FileDown className="h-4 w-4 mr-1" />
+                              )}
+                              Download Word Doc
+                            </Button>
+                          </div>
+                        )}
                       </CardHeader>
                     </Card>
                   ))}
