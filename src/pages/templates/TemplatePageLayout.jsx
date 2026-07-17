@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 
 const otherTemplates = [
@@ -25,7 +24,6 @@ export default function TemplatePageLayout({
       <main className="flex-1 container mx-auto px-4 py-16 max-w-3xl">
         <h1 className="text-4xl font-bold mb-4">{title}</h1>
         <p className="text-lg text-muted-foreground mb-6">{subtitle}</p>
-        <LegalDisclaimer variant="banner" className="mb-8" />
 
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-3">Who this is for</h2>
@@ -61,7 +59,6 @@ export default function TemplatePageLayout({
           <p className="text-sm text-muted-foreground mb-4">
             Pay $0.99 to edit a saved draft, download a PDF, or share a read-only link for this agreement.
           </p>
-          <LegalDisclaimer variant="compact" className="mb-4" />
           <div className="flex flex-wrap gap-3">
             <Link to="/builder">
               <Button size="lg">Start this template — Free</Button>

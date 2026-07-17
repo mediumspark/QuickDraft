@@ -1,6 +1,5 @@
 import jsPDF from 'jspdf'
 import { buildAgreementText } from './agreementUtils'
-import { LEGAL_DISCLAIMER_TEXT } from '@/components/LegalDisclaimer'
 
 const PAGE_WIDTH = 215.9
 const PAGE_HEIGHT = 279.4
@@ -90,16 +89,6 @@ export function generatePdf(agreement, signatures = {}) {
       y += LINE_HEIGHT * 4
     })
   }
-
-  const disclaimer = LEGAL_DISCLAIMER_TEXT.standard
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(8)
-  const disclaimerLines = doc.splitTextToSize(disclaimer, MAX_WIDTH)
-  let dy = PAGE_HEIGHT - MARGIN - disclaimerLines.length * 4
-  disclaimerLines.forEach((line) => {
-    doc.text(line, MARGIN, dy)
-    dy += 4
-  })
 
   return doc
 }

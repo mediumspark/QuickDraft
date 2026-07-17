@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import BoilerplatePrice from '@/components/BoilerplatePrice'
 import {
@@ -33,10 +32,9 @@ export default function Pricing() {
         <h1 className="text-4xl font-bold mb-4">Simple, student-friendly pricing</h1>
         <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
           Built for game developers, technical folks, and college students who need
-          agreement templates without a lawyer bill. Draft and read free — pay only
+          agreement templates without spending hundreds. Draft and read free — pay only
           to edit, download, or share.
         </p>
-        <LegalDisclaimer variant="banner" className="mb-10 max-w-2xl mx-auto text-left" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto text-left">
           <div className="rounded-xl border bg-card p-8 shadow-sm">
@@ -80,12 +78,11 @@ export default function Pricing() {
         </div>
 
         <div className="mt-6 max-w-md mx-auto">
-          <LegalDisclaimer variant="compact" />
         </div>
 
         <p className="text-sm text-muted-foreground mt-8 max-w-xl mx-auto">
           Re-downloading or re-copying the same link on your device is free after payment.
-          Templates are not created by lawyers — read carefully before sharing.
+          Templates are ready to customize — download and go.
         </p>
 
         <div className="mt-8">

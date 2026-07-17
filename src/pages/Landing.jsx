@@ -7,7 +7,6 @@ import {
 import Navbar from '@/components/Navbar'
 import LandingAuthActions from '@/components/LandingAuthActions'
 import Footer from '@/components/Footer'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -78,7 +77,6 @@ export default function Landing() {
               {' '}Sign in with Google to save drafts across devices.
             </p>
             <div className="mt-4 max-w-2xl mx-auto">
-              <LegalDisclaimer variant="banner" />
             </div>
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/builder">
@@ -152,7 +150,7 @@ export default function Landing() {
               <h2 className="text-3xl font-bold">Built for people who move fast</h2>
               <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
                 Whether you are shipping a game, collaborating on a side project, or formalizing
-                a student venture — get a clear template agreement without the lawyer price tag.
+                a student venture — get a clear template agreement without spending hundreds.
               </p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -213,7 +211,7 @@ export default function Landing() {
           <div className="container mx-auto px-4">
             <motion.div {...fadeIn} className="text-center mb-12">
               <h2 className="text-3xl font-bold">Agreement templates we support</h2>
-              <p className="text-muted-foreground mt-2">Plus NDAs, Privacy Policies, EULAs, and fully custom clauses — all templates, not lawyer-drafted documents</p>
+              <p className="text-muted-foreground mt-2">Plus NDAs, Privacy Policies, EULAs, and fully custom clauses</p>
             </motion.div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {agreementTypes.map((a, i) => (

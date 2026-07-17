@@ -2,11 +2,6 @@ import { siteConfig } from './siteConfig'
 
 export const faqItems = [
   {
-    question: 'Are AQuickDraft agreements created by lawyers?',
-    answer:
-      'No. AQuickDraft provides agreement templates only. Documents are not crafted, reviewed, or created by lawyers. Always read through your agreement carefully before presenting it to others.',
-  },
-  {
     question: 'Who is AQuickDraft for?',
     answer:
       'Game developers, technical collaborators, and college students who need fast, affordable agreement templates for revenue sharing, profit sharing, commissions, and NDAs.',
@@ -17,19 +12,19 @@ export const faqItems = [
       'Drafting and reading the full agreement are free. Pay $0.99 per document to edit a saved draft, download a PDF, or generate a shareable link (reg. $5). No subscriptions.',
   },
   {
-    question: 'Do I still need a lawyer?',
-    answer:
-      'For important or high-stakes deals, yes. Templates are a starting point to clarify terms between partners — not a replacement for professional legal advice.',
-  },
-  {
     question: 'Can I preview an agreement before paying?',
     answer:
-      'Yes. You can draft agreements and read the full legal text for free. Paying unlocks editing saved drafts, PDF download, or sharing.',
+      'Yes. You can draft agreements and read the full text for free. Paying unlocks editing saved drafts, PDF download, or sharing.',
   },
   {
     question: 'What agreement types are supported?',
     answer:
       'Revenue sharing, profit sharing, commission-based agreements, and NDAs — plus custom clauses you can add yourself.',
+  },
+  {
+    question: 'Can I buy a Word document instead of using the builder?',
+    answer:
+      'Yes. Browse ready-made Word boilerplates, pay once, and download an editable .docx you can open in Word or Google Docs.',
   },
 ]
 

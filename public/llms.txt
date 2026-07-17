@@ -4,12 +4,6 @@
 
 AQuickDraft (https://www.aquickdraft.com) helps indie developers, technical collaborators, and students draft affordable agreement templates. Drafting and reading the full agreement are free. Pay $0.99 per document to edit a saved draft, download a PDF, or share a read-only link (reg. $5).
 
-## Important
-
-- Documents are **templates only** — not crafted, reviewed, or created by lawyers.
-- Users should read through agreements carefully before presenting them to others.
-- Not a substitute for professional legal advice.
-
 ## Audience
 
 - Game developers (revenue splits with artists, contractors, co-devs)

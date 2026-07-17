@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { useToast } from '@/components/ui/toast'
 
 export default function Contact() {
@@ -32,7 +31,6 @@ export default function Contact() {
           <p className="text-muted-foreground mb-4">
             Have a question or feedback? We'd love to hear from you.
           </p>
-          <LegalDisclaimer variant="compact" className="mb-8" />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 
 const templateLinks = [
   { to: '/templates/revenue-sharing', label: 'Revenue Sharing' },
@@ -25,7 +24,6 @@ export default function Footer() {
               Draft fast, read free, pay $0.99 to edit, download, or share.
             </p>
             <div className="mt-4 max-w-md">
-              <LegalDisclaimer variant="footer" />
             </div>
           </div>
           <div>
@@ -55,7 +53,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t mt-8 pt-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} AQuickDraft. Templates only — not legal advice.
+          © {new Date().getFullYear()} AQuickDraft.
         </div>
       </div>
     </footer>

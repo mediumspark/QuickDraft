@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { FileDown } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { BoilerplatePriceInline } from '@/components/BoilerplatePrice'
@@ -39,8 +38,6 @@ export default function Boilerplates() {
             )}
           </p>
         </div>
-
-        <LegalDisclaimer variant="banner" className="mb-10 max-w-3xl mx-auto" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {boilerplateProducts.map((product) => (

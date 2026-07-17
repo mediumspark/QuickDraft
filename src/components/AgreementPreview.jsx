@@ -1,5 +1,4 @@
 import { buildAgreementText, getAgreementTypeLabel } from '@/utils/agreementUtils'
-import { LEGAL_DISCLAIMER_TEXT } from '@/components/LegalDisclaimer'
 import SignaturePad from './SignaturePad'
 
 function renderLine(line, index) {
@@ -96,12 +95,6 @@ export default function AgreementPreview({
           ))}
         </div>
       )}
-
-      <div className="border-t bg-muted/20 px-6 py-4">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          <strong>Template notice:</strong> {LEGAL_DISCLAIMER_TEXT.full}
-        </p>
-      </div>
     </div>
   )
 }

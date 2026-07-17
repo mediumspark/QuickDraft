@@ -2,7 +2,6 @@ import { FileText } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { formatBasePrice, formatCurrentPrice } from '@/data/pricing'
 
 const ACTION_COPY = {
@@ -40,8 +39,6 @@ export default function PayForDocumentModal({ open, onOpenChange, action = 'down
             {copy.after}
           </DialogDescription>
         </DialogHeader>
-
-        <LegalDisclaimer variant="banner" />
 
         <div className="rounded-lg border bg-muted/30 p-4 text-center my-2">
           <p className="text-sm text-muted-foreground line-through">{formatBasePrice()}</p>

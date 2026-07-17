@@ -3,7 +3,6 @@ import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { FileDown, Check } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import PayForBoilerplateModal from '@/components/PayForBoilerplateModal'
@@ -158,8 +157,6 @@ export default function BoilerplateDetail() {
 
         <h1 className="text-4xl font-bold mt-4 mb-2">{product.name}</h1>
         <p className="text-lg text-muted-foreground mb-6">{product.description}</p>
-
-        <LegalDisclaimer variant="banner" className="mb-8" />
 
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-3">What&apos;s included</h2>

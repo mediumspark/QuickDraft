@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { faqItems } from '@/seo/structuredData'
 
@@ -14,7 +13,6 @@ export default function Faq() {
         <p className="text-muted-foreground mb-6">
           Answers about AQuickDraft templates, pricing, and who we built this for.
         </p>
-        <LegalDisclaimer variant="banner" className="mb-10" />
 
         <div className="space-y-8">
           {faqItems.map((item) => (

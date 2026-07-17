@@ -15,7 +15,6 @@ import VersionHistory from '@/components/VersionHistory'
 import AuditLogPanel from '@/components/AuditLogPanel'
 import EmailNotifyModal from '@/components/EmailNotifyModal'
 import PayForDocumentModal from '@/components/PayForDocumentModal'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { useToast } from '@/components/ui/toast'
@@ -349,12 +348,8 @@ export default function Builder() {
       <div className="bg-accent border-b px-4 py-2 text-sm text-center text-accent-foreground">
         {isPaymentsConfigured()
           ? `Drafting and reading are free. Pay ${price} to edit a saved draft, download, or share.`
-          : 'Agreement templates for game devs, technical folks & students — not lawyer-drafted documents.'}
+          : 'Agreement templates for game devs, technical folks & students.'}
         {isPaymentsConfigured() && (user ? ' Your purchases sync to your account.' : ' Sign in to save drafts across devices.')}
-      </div>
-
-      <div className="border-b px-4 py-2">
-        <LegalDisclaimer variant="compact" className="text-center" />
       </div>
 
       {editLocked && (

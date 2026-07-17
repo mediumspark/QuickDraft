@@ -11,7 +11,7 @@ export const routeSeo = {
   '/': {
     title: 'Agreement Templates for Devs & Students',
     description:
-      'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $0.99 to edit, download, or share. Templates only — not created by lawyers.',
+      'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $0.99 to edit, download, or share.',
     index: true,
     jsonLd: homeSchemas(),
   },
@@ -36,7 +36,7 @@ export const routeSeo = {
   '/faq': {
     title: 'FAQ',
     description:
-      'Frequently asked questions about AQuickDraft templates, pricing, and legal disclaimers. Templates are not created by lawyers.',
+      'Frequently asked questions about AQuickDraft templates, pricing, and how the builder works.',
     index: true,
     jsonLd: [faqPageSchema()],
   },
@@ -73,7 +73,7 @@ export const routeSeo = {
   '/templates/profit-sharing': {
     title: 'Profit Sharing Agreement Template',
     description:
-      'Profit sharing agreement template for startups, side projects, and student ventures. Distribute profits after expenses. Templates only.',
+      'Profit sharing agreement template for startups, side projects, and student ventures. Distribute profits after expenses.',
     index: true,
     jsonLd: [templatePageSchema({
       name: 'Profit Sharing Agreement Template',

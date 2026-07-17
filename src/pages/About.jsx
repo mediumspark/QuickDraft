@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { LegalDisclaimer } from '@/components/LegalDisclaimer'
 
 export default function About() {
   return (
@@ -21,7 +20,6 @@ export default function About() {
               equity split with a co-founder, or putting a class startup agreement on paper,
               AQuickDraft gives you editable templates to get started.
             </p>
-            <LegalDisclaimer variant="banner" />
 
             <h2 className="text-2xl font-semibold text-foreground mt-8">Who we serve</h2>
             <ul className="list-disc pl-6 space-y-2">
@@ -30,12 +28,11 @@ export default function About() {
               <li><strong>College students</strong> — class projects, club ventures, and dorm-room startups on a budget</li>
             </ul>
 
-            <h2 className="text-2xl font-semibold text-foreground mt-8">Templates, not legal services</h2>
+            <h2 className="text-2xl font-semibold text-foreground mt-8">How it works</h2>
             <p>
-              AQuickDraft provides agreement <strong>templates</strong> only. Our documents are not crafted,
-              reviewed, or created by lawyers. They are starting points you fill in and customize.
-              You should always read through your agreement carefully before presenting it to partners,
-              investors, or anyone else.
+              Pick a template, fill in your parties and terms, preview the full agreement, then
+              download a PDF or Word file when you are ready. Everything starts free — you only
+              pay when you unlock editing, download, or share.
             </p>
 
             <h2 className="text-2xl font-semibold text-foreground mt-8">What we believe</h2>
@@ -43,7 +40,7 @@ export default function About() {
               <li>Clear agreements help creative and technical collaborations succeed</li>
               <li>Students and indie devs deserve affordable tools</li>
               <li>Transparency builds better partnerships</li>
-              <li>Templates are a starting point — not a replacement for a lawyer on important deals</li>
+              <li>Getting terms on paper early prevents headaches later</li>
             </ul>
           </div>
         </motion.div>
