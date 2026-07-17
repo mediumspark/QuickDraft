@@ -1,24 +1,30 @@
 import { templates } from '@/data/templates'
+import {
+  BASE_PRICE_CENTS,
+  CURRENT_PRICE_CENTS,
+  formatPrice,
+} from '@/data/pricing'
 
-export const BOILERPLATE_LIST_PRICE_CENTS = 15000 // $150
-export const BOILERPLATE_SALE_PRICE_CENTS = 500 // $5 launch sale
-/** End of launch sale — 3 weeks from site launch (June 30, 2026) */
-export const BOILERPLATE_SALE_END = '2026-07-21T23:59:59'
+/** @deprecated use BASE_PRICE_CENTS from pricing.js */
+export const BOILERPLATE_LIST_PRICE_CENTS = BASE_PRICE_CENTS
+/** @deprecated use CURRENT_PRICE_CENTS from pricing.js */
+export const BOILERPLATE_SALE_PRICE_CENTS = CURRENT_PRICE_CENTS
+/** End of promotional pricing window */
+export const BOILERPLATE_SALE_END = '2027-12-31T23:59:59'
 
-/** @deprecated use getBoilerplatePriceCents() */
-export const BOILERPLATE_PRICE_CENTS = BOILERPLATE_SALE_PRICE_CENTS
+/** @deprecated use CURRENT_PRICE_CENTS */
+export const BOILERPLATE_PRICE_CENTS = CURRENT_PRICE_CENTS
 
 export function isBoilerplateOnSale() {
   return new Date() <= new Date(BOILERPLATE_SALE_END)
 }
 
 export function getBoilerplatePriceCents() {
-  return isBoilerplateOnSale() ? BOILERPLATE_SALE_PRICE_CENTS : BOILERPLATE_LIST_PRICE_CENTS
+  return isBoilerplateOnSale() ? CURRENT_PRICE_CENTS : BASE_PRICE_CENTS
 }
 
 export function formatBoilerplatePrice(cents) {
-  const dollars = cents / 100
-  return `$${Number.isInteger(dollars) ? dollars : dollars.toFixed(2)}`
+  return formatPrice(cents)
 }
 
 export function getBoilerplateSaleEndLabel() {

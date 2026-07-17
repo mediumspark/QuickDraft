@@ -22,7 +22,7 @@ export default function Footer() {
             </div>
             <p className="text-sm text-muted-foreground max-w-sm">
               Agreement templates for game developers, technical folks, and college students.
-              Draft fast, read free, pay $5 to edit, download, or share.
+              Draft fast, read free, pay $0.99 to edit, download, or share.
             </p>
             <div className="mt-4 max-w-md">
               <LegalDisclaimer variant="footer" />

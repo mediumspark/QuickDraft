@@ -79,7 +79,7 @@ export default function AgreementPreview({
 
       {!readOnly && onSignaturesChange && !signaturesUnlocked && (
         <div className="border-t px-6 py-4 text-sm text-muted-foreground text-center bg-muted/20">
-          Pay $5 to download to unlock signatures and the full PDF.
+          Pay $0.99 to download to unlock signatures and the full PDF.
         </div>
       )}
 

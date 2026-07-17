@@ -8,7 +8,7 @@ export const siteConfig = {
   defaultTitle: `${siteName} — Agreement Templates for Devs & Students`,
   titleTemplate: `%s | ${siteName}`,
   defaultDescription:
-    'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $5 to edit, download, or share. Templates only — not created by lawyers.',
+    'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $0.99 to edit, download, or share. Templates only — not created by lawyers.',
   disclaimerSnippet: 'Templates only — not created by lawyers.',
   defaultOgImage: '/og-image.svg',
   twitterHandle: '',

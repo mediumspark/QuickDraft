@@ -39,10 +39,12 @@ import {
   syncUserPaidDocuments,
 } from '@/services/payments'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatCurrentPrice } from '@/data/pricing'
 
 export default function Builder() {
   const { addToast } = useToast()
   const { user } = useAuth()
+  const price = formatCurrentPrice()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [draft, setDraft] = React.useState(() => {
@@ -102,7 +104,7 @@ export default function Builder() {
       const unlocked =
         !isPaymentsConfigured() || canEditDocument(docId)
       setEditLocked(!unlocked)
-      addToast(unlocked ? 'Draft loaded from your account' : 'Draft loaded — viewing is free. Pay $5 to edit.')
+      addToast(unlocked ? 'Draft loaded from your account' : `Draft loaded — viewing is free. Pay ${price} to edit.`)
       const next = new URLSearchParams(searchParams)
       next.delete('draft')
       setSearchParams(next, { replace: true })
@@ -249,7 +251,7 @@ export default function Builder() {
 
   const handleSave = async () => {
     if (editLocked) {
-      addToast('Pay $5 to unlock editing before saving changes.', 'info')
+      addToast(`Pay ${price} to unlock editing before saving changes.`, 'info')
       setPendingAction('edit')
       setPayModalOpen(true)
       return
@@ -306,7 +308,7 @@ export default function Builder() {
 
   const loadTemplate = (data) => {
     if (editLocked) {
-      addToast('Pay $5 to unlock editing before loading a template.', 'info')
+      addToast(`Pay ${price} to unlock editing before loading a template.`, 'info')
       setPendingAction('edit')
       setPayModalOpen(true)
       return
@@ -318,7 +320,7 @@ export default function Builder() {
 
   const restoreVersion = (data) => {
     if (editLocked) {
-      addToast('Pay $5 to unlock editing before restoring a version.', 'info')
+      addToast(`Pay ${price} to unlock editing before restoring a version.`, 'info')
       setPendingAction('edit')
       setPayModalOpen(true)
       return
@@ -346,7 +348,7 @@ export default function Builder() {
 
       <div className="bg-accent border-b px-4 py-2 text-sm text-center text-accent-foreground">
         {isPaymentsConfigured()
-          ? 'Drafting and reading are free. Pay $5 to edit a saved draft, download, or share.'
+          ? `Drafting and reading are free. Pay ${price} to edit a saved draft, download, or share.`
           : 'Agreement templates for game devs, technical folks & students — not lawyer-drafted documents.'}
         {isPaymentsConfigured() && (user ? ' Your purchases sync to your account.' : ' Sign in to save drafts across devices.')}
       </div>
@@ -358,11 +360,11 @@ export default function Builder() {
       {editLocked && (
         <div className="border-b bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row items-center justify-center gap-3">
           <span>
-            Viewing is free. This saved draft is locked — pay $5 to unlock editing.
+            Viewing is free. This saved draft is locked — pay {price} to unlock editing.
           </span>
           <Button size="sm" onClick={handleUnlockEdit} disabled={paying}>
             {paying ? <Spinner size="sm" /> : <Unlock className="h-4 w-4" />}
-            Unlock Editing ($5)
+            Unlock Editing ({price})
           </Button>
         </div>
       )}
@@ -426,7 +428,7 @@ export default function Builder() {
                 disabled={sharing || paying}
               >
                 {sharing ? <Spinner size="sm" /> : <Share2 className="h-4 w-4" />}
-                Share Link ($5)
+                Share Link ({price})
               </Button>
             </div>
           </div>

@@ -2,7 +2,7 @@ import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { corsHeaders } from '../_shared/cors.ts'
 import { getAuthenticatedUser } from '../_shared/supabase.ts'
 
-const CREDIT_PRICE_CENTS = 500 // $5 per credit
+const CREDIT_PRICE_CENTS = 99 // $0.99 per credit
 const ALLOWED_CREDIT_PACKS = [1, 5, 10]
 
 Deno.serve(async (req) => {

@@ -230,7 +230,7 @@ export default function Account() {
               {payments.length === 0 ? (
                 <Card>
                   <CardContent className="py-8 text-center text-muted-foreground text-sm">
-                    No purchases yet. Pay $5 per document to edit, download, or share — drafting
+                    No purchases yet. Pay $0.99 per document to edit, download, or share — drafting
                     and reading are always free.
                   </CardContent>
                 </Card>

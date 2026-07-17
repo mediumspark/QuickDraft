@@ -10,12 +10,15 @@ import {
   isBoilerplateOnSale,
   BOILERPLATE_LIST_PRICE_CENTS,
 } from '@/data/boilerplateProducts'
+import { formatCurrentPrice, formatBasePrice } from '@/data/pricing'
+
+const price = formatCurrentPrice()
 
 const builderFeatures = [
   'Free drafting and full agreement reading',
-  '$5 = edit a saved draft',
-  '$5 = PDF download for one custom agreement',
-  '$5 = shareable read-only link',
+  `${price} = edit a saved draft`,
+  `${price} = PDF download for one custom agreement`,
+  `${price} = shareable read-only link`,
   'Sign in with Google to save drafts across devices',
   'No subscriptions or credit packs',
 ]
@@ -39,7 +42,8 @@ export default function Pricing() {
           <div className="rounded-xl border bg-card p-8 shadow-sm">
             <h2 className="text-lg font-semibold mb-1">Agreement Builder</h2>
             <p className="text-sm text-muted-foreground mb-4">Customize online, export PDF</p>
-            <p className="text-5xl font-bold text-primary text-center">$5</p>
+            <p className="text-sm text-muted-foreground line-through text-center">{formatBasePrice()}</p>
+            <p className="text-5xl font-bold text-primary text-center">{formatCurrentPrice()}</p>
             <p className="text-muted-foreground mt-1 text-center text-sm">per edit, download, or share</p>
             <ul className="mt-6 space-y-2 text-sm">
               {builderFeatures.map((f) => (

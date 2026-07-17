@@ -11,7 +11,7 @@ export const routeSeo = {
   '/': {
     title: 'Agreement Templates for Devs & Students',
     description:
-      'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $5 to edit, download, or share. Templates only — not created by lawyers.',
+      'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $0.99 to edit, download, or share. Templates only — not created by lawyers.',
     index: true,
     jsonLd: homeSchemas(),
   },
@@ -43,26 +43,26 @@ export const routeSeo = {
   '/pricing': {
     title: 'Pricing',
     description:
-      '$5 per document to edit, download, or share. $5 for boilerplate Word agreements. Free drafting and full reading. Built for student and indie dev budgets.',
+      '$0.99 per document to edit, download, or share (reg. $5). Word boilerplates $0.99 (reg. $5). Free drafting and full reading.',
     index: true,
     jsonLd: [pricingOfferSchema()],
   },
   '/boilerplates': {
     title: 'Boilerplate Word Agreements',
     description:
-      'Purchase ready-made agreement templates as editable Word documents (.docx). Launch sale $5 (reg. $150) for a limited time.',
+      'Purchase ready-made agreement templates as editable Word documents (.docx). Now $0.99 (reg. $5).',
     index: true,
   },
   '/boilerplates/simple-template': {
     title: 'Simple Template — Word Agreement',
     description:
-      'Buy the Simple Template: a ready-made 50/50 revenue sharing agreement as an editable Word document (.docx). Launch sale $5 (reg. $150).',
+      'Buy the Simple Template: a ready-made 50/50 revenue sharing agreement as an editable Word document (.docx). Now $0.99 (reg. $5).',
     index: true,
   },
   '/templates/revenue-sharing': {
     title: 'Revenue Sharing Agreement Template',
     description:
-      'Free revenue sharing agreement template for game developers and technical collaborators. Split game sales, DLC, or merch revenue. Draft and read free; $5 to edit, download, or share.',
+      'Free revenue sharing agreement template for game developers and technical collaborators. Split game sales, DLC, or merch revenue. Draft and read free; $0.99 to edit, download, or share.',
     index: true,
     jsonLd: [templatePageSchema({
       name: 'Revenue Sharing Agreement Template',

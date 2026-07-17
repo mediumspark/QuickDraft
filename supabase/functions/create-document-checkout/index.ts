@@ -2,22 +2,18 @@ import Stripe from 'https://esm.sh/stripe@14?target=deno'
 import { corsHeaders } from '../_shared/cors.ts'
 import { getAuthenticatedUser } from '../_shared/supabase.ts'
 
-const DOCUMENT_PRICE_CENTS = 500 // $5 per builder document action
-const BOILERPLATE_LIST_PRICE_CENTS = 15000 // $150
-const BOILERPLATE_SALE_PRICE_CENTS = 500 // $5 launch sale
-const BOILERPLATE_SALE_END = '2026-07-21T23:59:59'
+const BASE_PRICE_CENTS = 500 // $5.00 regular / base price
+const CURRENT_PRICE_CENTS = 99 // $0.99 live checkout price
+const SALE_END = '2027-12-31T23:59:59'
 
-function getBoilerplateCheckoutCents() {
-  return new Date() <= new Date(BOILERPLATE_SALE_END)
-    ? BOILERPLATE_SALE_PRICE_CENTS
-    : BOILERPLATE_LIST_PRICE_CENTS
+function getCheckoutCents(documentId: string) {
+  const onSale = new Date() <= new Date(SALE_END)
+  // Builder actions and boilerplates share the same promotional price.
+  return onSale ? CURRENT_PRICE_CENTS : BASE_PRICE_CENTS
 }
 
 function resolveUnitAmount(documentId: string) {
-  if (documentId.startsWith('boilerplate:')) {
-    return getBoilerplateCheckoutCents()
-  }
-  return DOCUMENT_PRICE_CENTS
+  return getCheckoutCents(documentId)
 }
 
 Deno.serve(async (req) => {

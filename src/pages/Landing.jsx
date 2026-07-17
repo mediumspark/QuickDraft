@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getFeaturedBoilerplate, formatBoilerplatePrice, getBoilerplatePriceCents, BOILERPLATE_LIST_PRICE_CENTS } from '@/data/boilerplateProducts'
+import { formatCurrentPrice } from '@/data/pricing'
 import BoilerplatePrice, { BoilerplatePriceInline } from '@/components/BoilerplatePrice'
 
 const fadeIn = {
@@ -71,7 +72,7 @@ export default function Landing() {
               draft revenue-sharing and partnership agreements fast — without hundreds in legal fees.
             </p>
             <p className="mt-2 text-sm text-muted-foreground max-w-xl mx-auto">
-              Drafting and reading are free. Pay $5 to edit a saved draft, download, or share.
+              Drafting and reading are free. Pay {formatCurrentPrice()} to edit a saved draft, download, or share.
               Word templates on sale now —{' '}
               <BoilerplatePriceInline /> each (reg. {formatBoilerplatePrice(BOILERPLATE_LIST_PRICE_CENTS)}).
               {' '}Sign in with Google to save drafts across devices.

@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { LegalDisclaimer } from '@/components/LegalDisclaimer'
+import { formatBasePrice, formatCurrentPrice } from '@/data/pricing'
 
 const ACTION_COPY = {
   edit: {
@@ -24,6 +25,7 @@ const ACTION_COPY = {
 
 export default function PayForDocumentModal({ open, onOpenChange, action = 'download', onPay, loading }) {
   const copy = ACTION_COPY[action] || ACTION_COPY.download
+  const price = formatCurrentPrice()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -34,7 +36,7 @@ export default function PayForDocumentModal({ open, onOpenChange, action = 'down
             {copy.title}
           </DialogTitle>
           <DialogDescription>
-            Pay $5 once to {copy.label}. Drafting and reading the full agreement are always free.
+            Pay {price} once to {copy.label}. Drafting and reading the full agreement are always free.
             {copy.after}
           </DialogDescription>
         </DialogHeader>
@@ -42,13 +44,14 @@ export default function PayForDocumentModal({ open, onOpenChange, action = 'down
         <LegalDisclaimer variant="banner" />
 
         <div className="rounded-lg border bg-muted/30 p-4 text-center my-2">
-          <p className="text-3xl font-bold text-primary">$5</p>
+          <p className="text-sm text-muted-foreground line-through">{formatBasePrice()}</p>
+          <p className="text-3xl font-bold text-primary">{price}</p>
           <p className="text-sm text-muted-foreground">per document action</p>
         </div>
 
         <Button onClick={onPay} disabled={loading} className="w-full">
           {loading ? <Spinner size="sm" /> : null}
-          {loading ? 'Redirecting to checkout...' : 'Pay $5 & Continue'}
+          {loading ? 'Redirecting to checkout...' : `Pay ${price} & Continue`}
         </Button>
       </DialogContent>
     </Dialog>

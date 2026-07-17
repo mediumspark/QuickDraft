@@ -14,7 +14,7 @@ export const faqItems = [
   {
     question: 'How much does AQuickDraft cost?',
     answer:
-      'Drafting and reading the full agreement are free. Pay $5 per document to edit a saved draft, download a PDF, or generate a shareable link. No subscriptions.',
+      'Drafting and reading the full agreement are free. Pay $0.99 per document to edit a saved draft, download a PDF, or generate a shareable link (reg. $5). No subscriptions.',
   },
   {
     question: 'Do I still need a lawyer?',
@@ -40,7 +40,7 @@ export const guideSteps = [
   { name: 'Add duration and dispute clauses', text: 'Set start/end dates, auto-renewal, termination notice, and governing law.' },
   { name: 'Customize with extra clauses', text: 'Add free-text provisions for non-compete, IP ownership, or special terms.' },
   { name: 'Preview carefully', text: 'Review the full live document preview. Read every clause before sharing.' },
-  { name: 'Pay and download', text: 'Pay $5 to download your PDF, share a link, or unlock editing on a saved draft.' },
+  { name: 'Pay and download', text: 'Pay $0.99 to download your PDF, share a link, or unlock editing on a saved draft.' },
 ]
 
 export function organizationSchema() {
@@ -64,7 +64,7 @@ export function softwareApplicationSchema() {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'USD',
-      description: 'Free drafting and full agreement reading. $5 to edit, download, or share.',
+      description: 'Free drafting and full agreement reading. $0.99 to edit, download, or share (reg. $5).',
     },
     description: siteConfig.defaultDescription,
     url: siteConfig.url,
@@ -106,9 +106,9 @@ export function pricingOfferSchema() {
     '@context': 'https://schema.org',
     '@type': 'Offer',
     name: 'AQuickDraft per-document edit, download, or share',
-    price: '5.00',
+    price: '0.99',
     priceCurrency: 'USD',
-    description: '$5 per document to edit a saved draft, download a PDF, or generate a shareable link. Drafting and reading are free.',
+    description: '$0.99 per document to edit, download, or share (reg. $5). Drafting and reading are free.',
     url: `${siteConfig.url}/pricing`,
     seller: {
       '@type': 'Organization',

@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
         action,
         user_id: session.metadata?.user_id || null,
         stripe_session_id: session.id,
-        amount_cents: session.amount_total ?? 500,
+        amount_cents: session.amount_total ?? 99,
         status: 'completed',
       })
     }

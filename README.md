@@ -1,12 +1,12 @@
 # AQuickDraft
 
-Agreement templates for game developers, technical folks, and college students. Revenue sharing, profit sharing, commission deals, and NDAs — $5 per document.
+Agreement templates for game developers, technical folks, and college students. Revenue sharing, profit sharing, commission deals, and NDAs — $0.99 per document (reg. $5).
 
 ## Stack
 
 - React 18 + Vite
 - Tailwind CSS + shadcn/ui-style components
-- Stripe Checkout — pay-per-document ($5), no accounts
+- Stripe Checkout — pay-per-document ($0.99, reg. $5), no accounts
 - Supabase Edge Functions + optional cloud storage for share links
 - LocalStorage for drafts, versions, audit log, and payment unlocks
 
@@ -83,9 +83,10 @@ Edge Function secrets (via `supabase secrets set`):
 ## Payment Model
 
 - **Drafting and reading** the full agreement are always free
-- **$5 to edit** a saved draft (new drafting sessions stay free)
-- **$5 to download** a PDF for one agreement
-- **$5 to share** a read-only link for one agreement
+- **$0.99 to edit** a saved draft (base price $5; new drafting sessions stay free)
+- **$0.99 to download** a PDF for one agreement
+- **$0.99 to share** a read-only link for one agreement
+- **$0.99 for Word boilerplates** (base price $5)
 - Paying for any action also unlocks further editing on that document
 - Re-download / re-copy on the same device is free after payment
 - No subscriptions or credit balances
