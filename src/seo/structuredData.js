@@ -4,7 +4,7 @@ export const faqItems = [
   {
     question: 'Who is AQuickDraft for?',
     answer:
-      'Game developers, technical collaborators, and college students who need fast, affordable agreement templates for revenue sharing, profit sharing, commissions, and NDAs.',
+      'Startups, side projects, and student ventures that need fast, affordable agreement templates for revenue sharing, profit sharing, commissions, co-founder splits, and NDAs.',
   },
   {
     question: 'How much does AQuickDraft cost?',

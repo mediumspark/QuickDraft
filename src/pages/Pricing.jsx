@@ -29,10 +29,10 @@ export default function Pricing() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-16 max-w-3xl text-center">
-        <h1 className="text-4xl font-bold mb-4">Simple, student-friendly pricing</h1>
+        <h1 className="text-4xl font-bold mb-4">Simple, startup-friendly pricing</h1>
         <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-          Built for game developers, technical folks, and college students who need
-          agreement templates without spending hundreds. Draft and read free — pay only
+          Built for startups, side projects, and student ventures that need clear
+          agreements without spending hundreds. Draft and read free — pay only
           to edit, download, or share.
         </p>
 

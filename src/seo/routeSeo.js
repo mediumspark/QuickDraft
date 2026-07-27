@@ -9,16 +9,16 @@ import {
 
 export const routeSeo = {
   '/': {
-    title: 'Agreement Templates for Devs & Students',
+    title: 'Agreement Templates for Your Startup',
     description:
-      'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $0.99 to edit, download, or share.',
+      'Draft revenue splits, co-founder deals, and NDAs for your startup. Read the full agreement free; pay $0.99 to edit, download, or share.',
     index: true,
     jsonLd: homeSchemas(),
   },
   '/about': {
     title: 'About',
     description:
-      'AQuickDraft helps game developers, technical collaborators, and college students draft affordable agreement templates.',
+      'AQuickDraft helps startups, side projects, and student ventures draft affordable partnership and revenue-sharing agreements.',
     index: true,
   },
   '/guide': {

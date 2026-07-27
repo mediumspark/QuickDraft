@@ -20,7 +20,7 @@ export default function Footer() {
               <span className="font-semibold text-lg">AQuickDraft</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Agreement templates for game developers, technical folks, and college students.
+              Agreement templates for your startup, side project, or student venture.
               Draft fast, read free, pay $0.99 to edit, download, or share.
             </p>
             <div className="mt-4 max-w-md">

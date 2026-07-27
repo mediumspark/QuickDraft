@@ -5,13 +5,13 @@ export const siteName = 'AQuickDraft'
 export const siteConfig = {
   name: siteName,
   url: getSiteUrl() || 'https://www.aquickdraft.com',
-  defaultTitle: `${siteName} — Agreement Templates for Devs & Students`,
+  defaultTitle: `${siteName} — Agreement Templates for Your Startup`,
   titleTemplate: `%s | ${siteName}`,
   defaultDescription:
-    'Agreement templates for game developers, technical folks, and college students. Draft and read free; pay $0.99 to edit, download, or share.',
+    'Draft revenue splits, co-founder deals, and NDAs for your startup. Read the full agreement free; pay $0.99 to edit, download, or share.',
   defaultOgImage: '/og-image.svg',
   twitterHandle: '',
-  audience: ['game developers', 'technical folks', 'college students'],
+  audience: ['startups', 'side projects', 'student ventures'],
 }
 
 export function formatTitle(title) {

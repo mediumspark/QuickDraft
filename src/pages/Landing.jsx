@@ -66,14 +66,13 @@ export default function Landing() {
         <section className="container mx-auto px-4 py-20 md:py-28 text-center">
           <motion.div {...fadeIn}>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight max-w-4xl mx-auto leading-tight">
-              Quick agreement templates for devs &amp; students
+              Quick agreement templates for your startup
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-              AQuickDraft helps game developers, technical folks, and college students
-              draft revenue-sharing and partnership agreements fast — without hundreds in legal fees.
+              Draft revenue splits, co-founder deals, and NDAs in minutes — read the full
+              agreement free, pay {formatCurrentPrice()} to download or share.
             </p>
             <p className="mt-2 text-sm text-muted-foreground max-w-xl mx-auto">
-              Drafting and reading are free. Pay {formatCurrentPrice()} to edit a saved draft, download, or share.
               Word templates on sale now —{' '}
               <BoilerplatePriceInline /> each (reg. {formatBoilerplatePrice(BOILERPLATE_LIST_PRICE_CENTS)}).
               {' '}Sign in with Google to save drafts across devices.

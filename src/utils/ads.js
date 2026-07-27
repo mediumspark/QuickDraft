@@ -38,18 +38,33 @@ export function pushAdSenseSlot() {
   }
 }
 
+const CONVERSION_STORAGE_PREFIX = 'aquickdraft-conversion-'
+
 /** Fire a Google Ads purchase conversion after Stripe checkout succeeds. */
 export function trackPurchaseConversion({ value = 0.99, currency = 'USD', transactionId } = {}) {
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return
+  if (!transactionId) return
 
-  const sendTo = getGoogleAdsConversionLabel()
-    ? `${getGoogleAdsId()}/${getGoogleAdsConversionLabel()}`
-    : getGoogleAdsId()
+  const dedupeKey = `${CONVERSION_STORAGE_PREFIX}${transactionId}`
+  try {
+    if (sessionStorage.getItem(dedupeKey)) return
+  } catch {
+    // Private browsing — still attempt to track once per page load.
+  }
+
+  const label = getGoogleAdsConversionLabel()
+  if (!label) return
 
   window.gtag('event', 'conversion', {
-    send_to: sendTo,
+    send_to: `${getGoogleAdsId()}/${label}`,
     value,
     currency,
     transaction_id: transactionId,
   })
+
+  try {
+    sessionStorage.setItem(dedupeKey, '1')
+  } catch {
+    // Ignore storage failures.
+  }
 }
