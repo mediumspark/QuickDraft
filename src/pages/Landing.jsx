@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge'
 import { getFeaturedBoilerplate, formatBoilerplatePrice, getBoilerplatePriceCents, BOILERPLATE_LIST_PRICE_CENTS } from '@/data/boilerplateProducts'
 import { formatCurrentPrice } from '@/data/pricing'
 import BoilerplatePrice, { BoilerplatePriceInline } from '@/components/BoilerplatePrice'
+import AdUnit from '@/components/AdUnit'
+import { getLandingAdSlot } from '@/utils/ads'
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -64,7 +66,7 @@ export default function Landing() {
         <section className="container mx-auto px-4 py-20 md:py-28 text-center">
           <motion.div {...fadeIn}>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight max-w-4xl mx-auto leading-tight">
-              Quick agreement templates for devs, builders &amp; students
+              Quick agreement templates for devs &amp; students
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
               AQuickDraft helps game developers, technical folks, and college students
@@ -93,6 +95,7 @@ export default function Landing() {
             </div>
             <LandingAuthActions className="mt-4" />
           </motion.div>
+          <AdUnit slot={getLandingAdSlot()} className="mt-12" />
         </section>
 
         {/* Simple Template — pay & download Word doc */}

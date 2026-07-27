@@ -20,6 +20,8 @@ import {
 } from '@/data/boilerplateProducts'
 import { downloadAgreementDocx } from '@/utils/docxUtils'
 import { downloadPdf } from '@/utils/pdfUtils'
+import { trackPurchaseConversion } from '@/utils/ads'
+import { CURRENT_PRICE_CENTS } from '@/data/pricing'
 
 const ACTION_LABELS = {
   download: 'download',
@@ -81,6 +83,11 @@ export default function PaymentSuccess() {
         setAction(result.action)
         setDocumentId(result.documentId)
         setStatus('success')
+        trackPurchaseConversion({
+          value: CURRENT_PRICE_CENTS / 100,
+          currency: 'USD',
+          transactionId: sessionId,
+        })
 
         const pending = getPendingPayment() || {}
         const productId = parseBoilerplateId(result.documentId)
