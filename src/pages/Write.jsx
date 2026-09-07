@@ -85,6 +85,7 @@ export default function Write() {
   const [publishing, setPublishing] = React.useState(false)
   const [flash, setFlash] = React.useState(false)
   const [editorKey, setEditorKey] = React.useState('boot')
+  const [sessionOpen, setSessionOpen] = React.useState(false)
   const rootRef = React.useRef(null)
 
   const wordCount = countWords(body)
@@ -374,73 +375,84 @@ export default function Write() {
             </div>
           </div>
 
-          <div className="container mx-auto px-4 pb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-1">
-              <Label className="text-xs">Timer preset</Label>
-              <Select
-                value={String(timerSeconds)}
-                onChange={(e) => {
-                  const s = Number(e.target.value)
-                  setTimerSeconds(s)
-                  setRemaining(s)
-                  setRunning(false)
-                }}
-              >
-                {TIMER_PRESETS.map((p) => (
-                  <option key={p.seconds} value={p.seconds}>{p.label}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Word goal</Label>
-              <Input
-                type="number"
-                min="0"
-                placeholder="Optional"
-                value={wordGoal}
-                onChange={(e) => setWordGoal(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Prompt</Label>
-                <Button type="button" size="sm" variant="ghost" className="h-6 text-xs" onClick={pickPrompt}>
-                  <Shuffle className="h-3 w-3 mr-1" />
-                  Random
-                </Button>
-              </div>
-              <Input
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Optional writing prompt"
-              />
-            </div>
-            <div className="space-y-1 sm:col-span-2 lg:col-span-4">
-              <Label className="text-xs">AI assistance</Label>
-              <div className="flex flex-wrap gap-2">
-                {Object.values(AI_STATUS).map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setAiStatus(opt.id)}
-                    className={cn(
-                      'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-                      aiStatus === opt.id
-                        ? 'border-primary bg-accent ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/40'
-                    )}
+          <div className="container mx-auto px-4 pb-3">
+            <button
+              type="button"
+              onClick={() => setSessionOpen((o) => !o)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              {sessionOpen ? 'Hide session options' : 'Session options (timer, prompt, AI label)'}
+            </button>
+            {sessionOpen && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1">
+                  <Label className="text-xs">Timer preset</Label>
+                  <Select
+                    value={String(timerSeconds)}
+                    onChange={(e) => {
+                      const s = Number(e.target.value)
+                      setTimerSeconds(s)
+                      setRemaining(s)
+                      setRunning(false)
+                    }}
                   >
-                    <span className="font-medium block">{opt.label}</span>
-                    <span className="text-xs text-muted-foreground">{opt.short}</span>
-                  </button>
-                ))}
+                    {TIMER_PRESETS.map((p) => (
+                      <option key={p.seconds} value={p.seconds}>{p.label}</option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Word goal</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="Optional"
+                    value={wordGoal}
+                    onChange={(e) => setWordGoal(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Prompt</Label>
+                    <Button type="button" size="sm" variant="ghost" className="h-6 text-xs" onClick={pickPrompt}>
+                      <Shuffle className="h-3 w-3 mr-1" />
+                      Random
+                    </Button>
+                  </div>
+                  <Input
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Optional writing prompt"
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-2 lg:col-span-4">
+                  <Label className="text-xs">AI assistance</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.values(AI_STATUS).map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setAiStatus(opt.id)}
+                        className={cn(
+                          'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                          aiStatus === opt.id
+                            ? 'border-primary bg-accent ring-2 ring-primary/20'
+                            : 'border-border hover:border-primary/40'
+                        )}
+                      >
+                        <span className="font-medium block">{opt.label}</span>
+                        <span className="text-xs text-muted-foreground">{opt.short}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {aiStatus === 'ai_generated' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      AI-generated writing can’t be shared to the forum.
+                    </p>
+                  )}
+                </div>
               </div>
-              {aiStatus === 'ai_generated' && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  AI-generated writing can’t be shared to the forum.
-                </p>
-              )}
-            </div>
+            )}
           </div>
         </div>
       )}
