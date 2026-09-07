@@ -13,6 +13,8 @@ const links = [
   { to: '/write', label: 'Write' },
   { to: '/drafts', label: 'Drafts' },
   { to: '/forum', label: 'Forum' },
+  { to: '/search', label: 'Search' },
+  { to: '/following', label: 'Following' },
   { to: '/about', label: 'About' },
 ]
 

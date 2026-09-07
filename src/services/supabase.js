@@ -599,3 +599,88 @@ export async function markNotificationsRead(ids) {
   const { error } = await query
   return { error }
 }
+
+function escapeIlike(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\\/g, '\\\\')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_')
+    .replace(/,/g, ' ')
+}
+
+export async function searchSite(query, { limit = 20 } = {}) {
+  if (!supabase) return { users: [], works: [], error: null, offline: true }
+  const q = escapeIlike(query)
+  if (!q) return { users: [], works: [], error: null }
+
+  const pattern = `"%${q}%"`
+  const [usersRes, worksRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, display_name, email, created_at')
+      .or(`display_name.ilike.${pattern},email.ilike.${pattern}`)
+      .order('display_name', { ascending: true })
+      .limit(limit),
+    supabase
+      .from('forum_posts')
+      .select('id, title, body, ai_status, post_kind, created_at, user_id, profiles!user_id(display_name, email), forum_boards!board_id(slug, name)')
+      .eq('status', 'published')
+      .or(`title.ilike.${pattern},body.ilike.${pattern}`)
+      .order('created_at', { ascending: false })
+      .limit(limit),
+  ])
+
+  return {
+    users: usersRes.data || [],
+    works: worksRes.data || [],
+    error: usersRes.error || worksRes.error || null,
+  }
+}
+
+export async function listFollowedWriters() {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { data: [], error: new Error('Sign in required') }
+
+  const { data, error } = await supabase
+    .from('user_follows')
+    .select('following_id, created_at, profiles!following_id(id, display_name, email)')
+    .eq('follower_id', user.id)
+    .order('created_at', { ascending: false })
+
+  return {
+    data: (data || []).map((row) => ({
+      followed_at: row.created_at,
+      ...(row.profiles || { id: row.following_id }),
+    })),
+    error,
+  }
+}
+
+export async function listWatchedProjects() {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { data: [], error: new Error('Sign in required') }
+
+  const { data, error } = await supabase
+    .from('project_watches')
+    .select(`
+      created_at,
+      post_id,
+      forum_posts!post_id(
+        id, title, body, ai_status, post_kind, created_at, updated_at, user_id,
+        profiles!user_id(display_name, email),
+        forum_boards!board_id(slug, name)
+      )
+    `)
+    .eq('watcher_id', user.id)
+    .order('created_at', { ascending: false })
+
+  return {
+    data: (data || [])
+      .map((row) => row.forum_posts ? { ...row.forum_posts, watched_at: row.created_at } : null)
+      .filter(Boolean),
+    error,
+  }
+}
