@@ -1,7 +1,5 @@
 import * as React from 'react'
 import { supabase, isSupabaseConfigured } from '@/services/supabase'
-import { claimSessionDrafts } from '@/services/supabase'
-import { getOrCreateSessionId } from '@/utils/agreementUtils'
 import { getAuthRedirectUrl } from '@/utils/siteUrl'
 
 const AuthContext = React.createContext(null)
@@ -21,13 +19,8 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const nextUser = session?.user ?? null
-      setUser(nextUser)
-
-      if (nextUser) {
-        await claimSessionDrafts(getOrCreateSessionId(), nextUser.id)
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
     })
 
     return () => subscription.unsubscribe()

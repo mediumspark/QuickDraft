@@ -33,35 +33,67 @@ export async function getCurrentUser() {
   return user
 }
 
-export async function getAccessToken() {
-  if (!supabase) return null
-  const { data: { session } } = await supabase.auth.getSession()
-  return session?.access_token ?? null
+const VIEWER_KEY = 'aqd_viewer_key'
+
+export function getViewerKey() {
+  let key = localStorage.getItem(VIEWER_KEY)
+  if (!key) {
+    key = crypto.randomUUID()
+    localStorage.setItem(VIEWER_KEY, key)
+  }
+  return key
 }
 
-export async function saveDraftToBackend(draft, userId = null) {
+export function countWords(text) {
+  const trimmed = (text || '').trim()
+  if (!trimmed) return 0
+  return trimmed.split(/\s+/).length
+}
+
+// ---- Drafts ----
+
+export async function listDrafts() {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const { data, error } = await supabase
+    .from('drafts')
+    .select('*')
+    .order('updated_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function getDraft(id) {
+  if (!supabase) return { data: null, error: null, offline: true }
+  const { data, error } = await supabase
+    .from('drafts')
+    .select('*')
+    .eq('id', id)
+    .single()
+  return { data, error }
+}
+
+export async function saveDraft(draft) {
   if (!supabase) {
-    return { data: { id: draft.id || crypto.randomUUID() }, error: null, offline: true }
+    return { data: { ...draft, id: draft.id || crypto.randomUUID() }, error: null, offline: true }
   }
 
-  const uid = userId ?? (await getCurrentUser())?.id ?? null
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required to save drafts') }
 
   const payload = {
-    session_id: draft.sessionId,
-    agreement_type: draft.type,
-    data: draft,
-    share_token: draft.shareToken,
-    is_shared: draft.isShared || false,
+    title: draft.title || 'Untitled',
+    body: draft.body || '',
+    prompt: draft.prompt || '',
+    word_goal: draft.word_goal ?? null,
+    timer_seconds: draft.timer_seconds ?? 1500,
+    word_count: countWords(draft.body),
+    ai_status: draft.ai_status || 'ai_free',
+    user_id: user.id,
     updated_at: new Date().toISOString(),
-  }
-
-  if (uid) {
-    payload.user_id = uid
   }
 
   if (draft.id) {
     const { data, error } = await supabase
-      .from('agreements')
+      .from('drafts')
       .update(payload)
       .eq('id', draft.id)
       .select()
@@ -70,89 +102,142 @@ export async function saveDraftToBackend(draft, userId = null) {
   }
 
   const { data, error } = await supabase
-    .from('agreements')
+    .from('drafts')
     .insert(payload)
     .select()
     .single()
   return { data, error }
 }
 
-export async function loadAgreementById(id, shareToken) {
-  if (!supabase) {
-    const local = localStorage.getItem(`dealdraft_shared_${id}`)
-    if (local) return { data: JSON.parse(local), error: null }
-    return { data: null, error: new Error('Agreement not found') }
-  }
-
-  let query = supabase.from('agreements').select('*').eq('id', id)
-  if (shareToken) {
-    query = query.eq('share_token', shareToken)
-  }
-  const { data, error } = await query.single()
-  if (error) return { data: null, error }
-  return { data: data?.data || data, error: null }
+export async function deleteDraft(id) {
+  if (!supabase) return { error: null, offline: true }
+  const { error } = await supabase.from('drafts').delete().eq('id', id)
+  return { error }
 }
 
-export async function loadUserDraftById(id) {
-  if (!supabase) return { data: null, error: new Error('Not configured') }
+// ---- Forum posts ----
 
+export async function listForumPosts() {
+  if (!supabase) return { data: [], error: null, offline: true }
   const { data, error } = await supabase
-    .from('agreements')
-    .select('*')
+    .from('forum_posts')
+    .select('*, profiles!user_id(display_name, email)')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function getForumPost(id) {
+  if (!supabase) return { data: null, error: null, offline: true }
+  const { data, error } = await supabase
+    .from('forum_posts')
+    .select('*, profiles!user_id(display_name, email)')
     .eq('id', id)
     .single()
-
-  if (error) return { data: null, error }
-
-  const draft = data.data
-  return {
-    data: { ...draft, id: data.id, sessionId: data.session_id },
-    error: null,
-  }
+  return { data, error }
 }
 
-export async function listUserAgreements() {
-  if (!supabase) return { data: [], error: null }
+export async function publishToForum({ title, body, draftId, aiStatus, feedbackVisibility }) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  if (aiStatus === 'ai_generated') {
+    return { data: null, error: new Error('AI-generated writing can’t be shared to the forum.') }
+  }
+
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required') }
 
   const { data, error } = await supabase
-    .from('agreements')
-    .select('id, agreement_type, data, updated_at, created_at')
-    .order('updated_at', { ascending: false })
+    .from('forum_posts')
+    .insert({
+      user_id: user.id,
+      draft_id: draftId || null,
+      title: title || 'Untitled',
+      body: body || '',
+      status: 'published',
+      ai_status: aiStatus,
+      feedback_visibility: feedbackVisibility || 'accounts_only',
+    })
+    .select()
+    .single()
+  return { data, error }
+}
 
+export async function updateForumPost(id, patch) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const { data, error } = await supabase
+    .from('forum_posts')
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function recordPostView(postId) {
+  if (!supabase) return { count: 0, offline: true }
+  const { data, error } = await supabase.rpc('record_post_view', {
+    p_post_id: postId,
+    p_viewer_key: getViewerKey(),
+  })
+  return { count: data ?? 0, error }
+}
+
+// ---- Comments ----
+
+export async function listComments(postId) {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const { data, error } = await supabase
+    .from('forum_comments')
+    .select('*, profiles!user_id(display_name, email)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true })
   return { data: data || [], error }
 }
 
-export async function listUserPayments() {
-  if (!supabase) return { data: [], error: null }
+export async function createComment({ postId, body, anchorType, startOffset, endOffset, quoteText }) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required to comment') }
+
+  const payload = {
+    post_id: postId,
+    user_id: user.id,
+    body,
+    anchor_type: anchorType,
+  }
+
+  if (anchorType === 'selection') {
+    payload.start_offset = startOffset
+    payload.end_offset = endOffset
+    payload.quote_text = quoteText || ''
+  }
 
   const { data, error } = await supabase
-    .from('document_payments')
-    .select('id, document_id, action, amount_cents, created_at')
-    .order('created_at', { ascending: false })
-
-  return { data: data || [], error }
+    .from('forum_comments')
+    .insert(payload)
+    .select('*, profiles!user_id(display_name, email)')
+    .single()
+  return { data, error }
 }
 
-export async function claimSessionDrafts(sessionId, userId) {
-  if (!supabase || !sessionId || !userId) return
-
-  await supabase
-    .from('agreements')
-    .update({ user_id: userId })
-    .eq('session_id', sessionId)
-    .is('user_id', null)
+export async function deleteComment(id) {
+  if (!supabase) return { error: null, offline: true }
+  const { error } = await supabase.from('forum_comments').delete().eq('id', id)
+  return { error }
 }
 
-export async function enableSharing(draft) {
-  const shareToken = crypto.randomUUID()
-  const updated = { ...draft, shareToken, isShared: true }
-  const result = await saveDraftToBackend(updated)
-  if (result.offline) {
-    localStorage.setItem(`dealdraft_shared_${updated.id || shareToken}`, JSON.stringify(updated))
-    return { ...updated, id: updated.id || shareToken }
-  }
-  if (result.data) {
-    return { ...updated, id: result.data.id }
-  }
-  return updated
+export function authorLabel(profile, fallback = 'Writer') {
+  if (!profile) return fallback
+  return profile.display_name || profile.email?.split('@')[0] || fallback
+}
+
+export function canSeeViewCount(post, currentUserId) {
+  if (!post) return false
+  if (post.ai_status === 'ai_free') return true
+  if (post.ai_status === 'ai_contributed') return currentUserId && currentUserId === post.user_id
+  return false
+}
+
+export function canUseSelectionComments(post) {
+  return post?.ai_status === 'ai_free'
 }

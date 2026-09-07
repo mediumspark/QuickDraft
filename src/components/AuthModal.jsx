@@ -86,8 +86,7 @@ export default function AuthModal({ open, onOpenChange, redirectPath = '/account
             Sign in with Google
           </DialogTitle>
           <DialogDescription>
-            Use your Google account to save drafts and sync purchases across devices.
-            Drafting and agreement previews stay free.
+            Sign in with Google to save drafts to the cloud, publish to the forum, and leave feedback.
           </DialogDescription>
         </DialogHeader>
 

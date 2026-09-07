@@ -6,11 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:seo": "vite build && node scripts/generate-sitemap.mjs && node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check:supabase": "node scripts/check-supabase.mjs",
-    "deploy:functions": "supabase functions deploy create-document-checkout --no-verify-jwt && supabase functions deploy verify-document-payment --no-verify-jwt && supabase functions deploy stripe-webhook --no-verify-jwt"
+    "check:supabase": "node scripts/check-supabase.mjs"
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.13",
@@ -20,15 +18,10 @@
     "@radix-ui/react-slot": "^1.2.5",
     "@radix-ui/react-switch": "^1.3.0",
     "@radix-ui/react-toast": "^1.2.16",
-    "@stripe/stripe-js": "^9.8.0",
     "@supabase/supabase-js": "^2.108.1",
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "docx": "^9.7.1",
-    "framer-motion": "^12.40.0",
-    "jspdf": "^4.2.1",
-    "lodash": "^4.18.1",
     "lucide-react": "^1.18.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -45,7 +38,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "playwright": "^1.52.0",
     "tailwindcss": "^4.3.1",
     "vite": "^8.0.12"
   }
