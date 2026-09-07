@@ -33,6 +33,23 @@ export async function getCurrentUser() {
   return user
 }
 
+async function ensureCurrentProfile(user) {
+  if (!supabase || !user) return
+  const displayName =
+    user.user_metadata?.full_name
+    || user.user_metadata?.name
+    || user.email?.split('@')[0]
+    || 'Writer'
+  await supabase.from('profiles').upsert(
+    {
+      id: user.id,
+      email: user.email,
+      display_name: displayName,
+    },
+    { onConflict: 'id' }
+  )
+}
+
 const VIEWER_KEY = 'aqd_viewer_key'
 
 export function getViewerKey() {
@@ -84,6 +101,7 @@ export async function saveDraft(draft) {
 
   const user = await getCurrentUser()
   if (!user) return { data: null, error: new Error('Sign in required to save drafts') }
+  await ensureCurrentProfile(user)
 
   const payload = {
     title: draft.title || 'Untitled',
@@ -151,6 +169,7 @@ export async function publishToForum({ title, body, draftId, aiStatus, feedbackV
 
   const user = await getCurrentUser()
   if (!user) return { data: null, error: new Error('Sign in required') }
+  await ensureCurrentProfile(user)
 
   const { data, error } = await supabase
     .from('forum_posts')
@@ -204,6 +223,7 @@ export async function createComment({ postId, body, anchorType, startOffset, end
   if (!supabase) return { data: null, error: new Error('Backend not configured') }
   const user = await getCurrentUser()
   if (!user) return { data: null, error: new Error('Sign in required to comment') }
+  await ensureCurrentProfile(user)
 
   const payload = {
     post_id: postId,

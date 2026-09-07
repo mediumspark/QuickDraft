@@ -1,34 +1,45 @@
--- AQuickDraft writing app schema
--- Run in Supabase SQL editor
+-- AQuickDraft writing app — full backend schema
+-- Run this entire file in: Supabase Dashboard → SQL Editor → New query → Run
+-- Safe to re-run (idempotent).
 
 -- ============================================================
--- Profiles
+-- Extensions
 -- ============================================================
-CREATE TABLE IF NOT EXISTS profiles (
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================
+-- Profiles (required before drafts / posts / comments)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
   display_name TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
-DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
-DROP POLICY IF EXISTS "Anyone can read profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Anyone can read profiles" ON public.profiles;
 
-CREATE POLICY "Anyone can read profiles" ON profiles
+CREATE POLICY "Anyone can read profiles" ON public.profiles
   FOR SELECT USING (true);
 
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles
+  FOR UPDATE USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Users can insert own profile" ON profiles
+CREATE POLICY "Users can insert own profile" ON public.profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, display_name)
   VALUES (
@@ -36,22 +47,33 @@ BEGIN
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1))
   )
-  ON CONFLICT (id) DO NOTHING;
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    display_name = COALESCE(public.profiles.display_name, EXCLUDED.display_name);
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- Backfill profiles for users who signed up before this schema
+INSERT INTO public.profiles (id, email, display_name)
+SELECT
+  u.id,
+  u.email,
+  COALESCE(u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1))
+FROM auth.users u
+ON CONFLICT (id) DO NOTHING;
+
 -- ============================================================
 -- Drafts
 -- ============================================================
-CREATE TABLE IF NOT EXISTS drafts (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS public.drafts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   title TEXT NOT NULL DEFAULT 'Untitled',
   body TEXT NOT NULL DEFAULT '',
   prompt TEXT DEFAULT '',
@@ -60,26 +82,28 @@ CREATE TABLE IF NOT EXISTS drafts (
   word_count INTEGER NOT NULL DEFAULT 0,
   ai_status TEXT NOT NULL DEFAULT 'ai_free'
     CHECK (ai_status IN ('ai_free', 'ai_contributed', 'ai_generated')),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_drafts_user ON drafts(user_id);
+CREATE INDEX IF NOT EXISTS idx_drafts_user ON public.drafts(user_id);
+CREATE INDEX IF NOT EXISTS idx_drafts_updated ON public.drafts(user_id, updated_at DESC);
 
-ALTER TABLE drafts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.drafts ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Users manage own drafts" ON drafts;
-CREATE POLICY "Users manage own drafts" ON drafts
-  FOR ALL USING (auth.uid() = user_id)
+DROP POLICY IF EXISTS "Users manage own drafts" ON public.drafts;
+CREATE POLICY "Users manage own drafts" ON public.drafts
+  FOR ALL
+  USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================
 -- Forum posts
 -- ============================================================
-CREATE TABLE IF NOT EXISTS forum_posts (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  draft_id UUID REFERENCES drafts(id) ON DELETE SET NULL,
+CREATE TABLE IF NOT EXISTS public.forum_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  draft_id UUID REFERENCES public.drafts(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   body TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'published'
@@ -89,62 +113,67 @@ CREATE TABLE IF NOT EXISTS forum_posts (
   feedback_visibility TEXT NOT NULL DEFAULT 'accounts_only'
     CHECK (feedback_visibility IN ('author_only', 'accounts_only', 'public')),
   view_count INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT published_ai_ok CHECK (
     status != 'published' OR ai_status IN ('ai_free', 'ai_contributed')
   )
 );
 
-CREATE INDEX IF NOT EXISTS idx_forum_posts_status ON forum_posts(status, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_forum_posts_user ON forum_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_forum_posts_status ON public.forum_posts(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_forum_posts_user ON public.forum_posts(user_id);
 
-ALTER TABLE forum_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_posts ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Anyone can read published posts" ON forum_posts;
-DROP POLICY IF EXISTS "Authors manage own posts" ON forum_posts;
+DROP POLICY IF EXISTS "Anyone can read published posts" ON public.forum_posts;
+DROP POLICY IF EXISTS "Authors manage own posts" ON public.forum_posts;
+DROP POLICY IF EXISTS "Authors insert own posts" ON public.forum_posts;
+DROP POLICY IF EXISTS "Authors update own posts" ON public.forum_posts;
+DROP POLICY IF EXISTS "Authors delete own posts" ON public.forum_posts;
 
-CREATE POLICY "Anyone can read published posts" ON forum_posts
+CREATE POLICY "Anyone can read published posts" ON public.forum_posts
   FOR SELECT USING (status = 'published' OR auth.uid() = user_id);
 
-CREATE POLICY "Authors insert own posts" ON forum_posts
+CREATE POLICY "Authors insert own posts" ON public.forum_posts
   FOR INSERT WITH CHECK (
     auth.uid() = user_id
     AND (status != 'published' OR ai_status IN ('ai_free', 'ai_contributed'))
   );
 
-CREATE POLICY "Authors update own posts" ON forum_posts
-  FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Authors update own posts" ON public.forum_posts
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Authors delete own posts" ON forum_posts
+CREATE POLICY "Authors delete own posts" ON public.forum_posts
   FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================================
--- Post views
+-- Post views (unique per viewer_key)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS post_views (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  post_id UUID NOT NULL REFERENCES forum_posts(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS public.post_views (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES public.forum_posts(id) ON DELETE CASCADE,
   viewer_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   viewer_key TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (post_id, viewer_key)
 );
 
-CREATE INDEX IF NOT EXISTS idx_post_views_post ON post_views(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_views_post ON public.post_views(post_id);
 
-ALTER TABLE post_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.post_views ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Anyone can insert views" ON post_views;
-DROP POLICY IF EXISTS "Authors read views on own posts" ON post_views;
+DROP POLICY IF EXISTS "Anyone can insert views" ON public.post_views;
+DROP POLICY IF EXISTS "Authors read views on own posts" ON public.post_views;
 
-CREATE POLICY "Anyone can insert views" ON post_views
+CREATE POLICY "Anyone can insert views" ON public.post_views
   FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Authors read views on own posts" ON post_views
+CREATE POLICY "Authors read views on own posts" ON public.post_views
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM forum_posts p
+      SELECT 1 FROM public.forum_posts p
       WHERE p.id = post_id AND p.user_id = auth.uid()
     )
   );
@@ -160,8 +189,12 @@ DECLARE
   v_count INTEGER;
   v_inserted INTEGER;
 BEGIN
+  IF p_viewer_key IS NULL OR length(trim(p_viewer_key)) = 0 THEN
+    RETURN 0;
+  END IF;
+
   SELECT ai_status, view_count INTO v_ai, v_count
-  FROM forum_posts
+  FROM public.forum_posts
   WHERE id = p_post_id AND status = 'published';
 
   IF NOT FOUND THEN
@@ -172,19 +205,20 @@ BEGIN
     RETURN v_count;
   END IF;
 
-  INSERT INTO post_views (post_id, viewer_user_id, viewer_key)
+  INSERT INTO public.post_views (post_id, viewer_user_id, viewer_key)
   VALUES (p_post_id, auth.uid(), p_viewer_key)
   ON CONFLICT (post_id, viewer_key) DO NOTHING;
 
   GET DIAGNOSTICS v_inserted = ROW_COUNT;
 
   IF v_inserted > 0 THEN
-    UPDATE forum_posts
-    SET view_count = view_count + 1
+    UPDATE public.forum_posts
+    SET view_count = view_count + 1,
+        updated_at = NOW()
     WHERE id = p_post_id
     RETURNING view_count INTO v_count;
   ELSE
-    SELECT view_count INTO v_count FROM forum_posts WHERE id = p_post_id;
+    SELECT view_count INTO v_count FROM public.forum_posts WHERE id = p_post_id;
   END IF;
 
   RETURN COALESCE(v_count, 0);
@@ -194,36 +228,36 @@ $$;
 GRANT EXECUTE ON FUNCTION public.record_post_view(UUID, TEXT) TO anon, authenticated;
 
 -- ============================================================
--- Forum comments
+-- Forum comments (general + selection / Docs-style)
 -- ============================================================
-CREATE TABLE IF NOT EXISTS forum_comments (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  post_id UUID NOT NULL REFERENCES forum_posts(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS public.forum_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES public.forum_posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   body TEXT NOT NULL,
   anchor_type TEXT NOT NULL CHECK (anchor_type IN ('selection', 'general')),
   start_offset INTEGER,
   end_offset INTEGER,
   quote_text TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT selection_has_offsets CHECK (
     (anchor_type = 'general' AND start_offset IS NULL AND end_offset IS NULL)
     OR (anchor_type = 'selection' AND start_offset IS NOT NULL AND end_offset IS NOT NULL)
   )
 );
 
-CREATE INDEX IF NOT EXISTS idx_forum_comments_post ON forum_comments(post_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_forum_comments_post ON public.forum_comments(post_id, created_at);
 
-ALTER TABLE forum_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forum_comments ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Read comments by visibility" ON forum_comments;
-DROP POLICY IF EXISTS "Auth insert comments" ON forum_comments;
-DROP POLICY IF EXISTS "Delete own or author comments" ON forum_comments;
+DROP POLICY IF EXISTS "Read comments by visibility" ON public.forum_comments;
+DROP POLICY IF EXISTS "Auth insert comments" ON public.forum_comments;
+DROP POLICY IF EXISTS "Delete own or author comments" ON public.forum_comments;
 
-CREATE POLICY "Read comments by visibility" ON forum_comments
+CREATE POLICY "Read comments by visibility" ON public.forum_comments
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM forum_posts p
+      SELECT 1 FROM public.forum_posts p
       WHERE p.id = post_id
         AND p.status = 'published'
         AND (
@@ -234,11 +268,11 @@ CREATE POLICY "Read comments by visibility" ON forum_comments
     )
   );
 
-CREATE POLICY "Auth insert comments" ON forum_comments
+CREATE POLICY "Auth insert comments" ON public.forum_comments
   FOR INSERT WITH CHECK (
     auth.uid() = user_id
     AND EXISTS (
-      SELECT 1 FROM forum_posts p
+      SELECT 1 FROM public.forum_posts p
       WHERE p.id = post_id
         AND p.status = 'published'
         AND (
@@ -248,15 +282,40 @@ CREATE POLICY "Auth insert comments" ON forum_comments
     )
   );
 
-CREATE POLICY "Delete own or author comments" ON forum_comments
+CREATE POLICY "Delete own or author comments" ON public.forum_comments
   FOR DELETE USING (
     auth.uid() = user_id
     OR EXISTS (
-      SELECT 1 FROM forum_posts p
+      SELECT 1 FROM public.forum_posts p
       WHERE p.id = post_id AND p.user_id = auth.uid()
     )
   );
 
--- Drop legacy product tables if present
-DROP TABLE IF EXISTS document_payments CASCADE;
-DROP TABLE IF EXISTS agreements CASCADE;
+-- ============================================================
+-- Grants (RLS still enforces access)
+-- ============================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
+GRANT SELECT ON public.profiles TO anon, authenticated;
+GRANT INSERT, UPDATE ON public.profiles TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.drafts TO authenticated;
+
+GRANT SELECT ON public.forum_posts TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.forum_posts TO authenticated;
+
+GRANT SELECT, INSERT ON public.post_views TO anon, authenticated;
+
+GRANT SELECT ON public.forum_comments TO anon, authenticated;
+GRANT INSERT, DELETE ON public.forum_comments TO authenticated;
+
+-- ============================================================
+-- Drop legacy legal-product tables if present
+-- ============================================================
+DROP TABLE IF EXISTS public.document_payments CASCADE;
+DROP TABLE IF EXISTS public.agreements CASCADE;
+
+-- ============================================================
+-- Reload PostgREST schema cache (fixes "not found in schema cache")
+-- ============================================================
+NOTIFY pgrst, 'reload schema';

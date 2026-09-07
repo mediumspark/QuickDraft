@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Validates Supabase env vars and tests auth/API connectivity.
+ * Validates Supabase env vars and writing-app tables.
  * Usage: node scripts/check-supabase.mjs
  */
 import { readFileSync, existsSync } from 'node:fs'
@@ -37,7 +37,7 @@ if (!env) {
   process.exit(1)
 }
 
-const url = env.VITE_SUPABASE_URL
+const url = env.VITE_SUPABASE_URL?.replace(/\/$/, '')
 const anonKey = env.VITE_SUPABASE_ANON_KEY
 const siteUrl = env.VITE_SITE_URL?.replace(/\/$/, '')
 let ok = true
@@ -50,7 +50,6 @@ function check(label, pass, hint) {
 }
 
 check('VITE_SITE_URL is set', !!siteUrl, 'Add VITE_SITE_URL=https://www.aquickdraft.com to .env')
-check('VITE_SITE_URL is not localhost', siteUrl && !siteUrl.includes('localhost') && !siteUrl.includes('127.0.0.1'), 'Use your production URL')
 check('VITE_SUPABASE_URL is set', !!url, 'Add VITE_SUPABASE_URL to .env')
 check('VITE_SUPABASE_URL is not a placeholder', url && !url.includes('your-project'), 'Replace with your project URL')
 check('VITE_SUPABASE_ANON_KEY is set', !!anonKey, 'Add VITE_SUPABASE_ANON_KEY to .env')
@@ -83,36 +82,68 @@ try {
   check('Network connection', false, err.message)
 }
 
-const displaySiteUrl = siteUrl || 'https://www.aquickdraft.com'
+console.log('\nChecking writing tables (schema.sql must be applied)...')
 
-console.log('\nChecking payment edge functions...')
+const tables = ['profiles', 'drafts', 'forum_posts', 'post_views', 'forum_comments']
 
-try {
-  const preflight = await fetch(`${url}/functions/v1/create-document-checkout`, {
-    method: 'OPTIONS',
-    headers: {
-      Origin: displaySiteUrl || 'https://www.aquickdraft.com',
-      'Access-Control-Request-Method': 'POST',
-      'Access-Control-Request-Headers': 'authorization,content-type',
-    },
-  })
-  check(
-    'create-document-checkout deployed',
-    preflight.status !== 404,
-    'Run: supabase link --project-ref YOUR_REF && supabase functions deploy create-document-checkout --no-verify-jwt'
-  )
-} catch (err) {
-  check('Edge function reachable', false, err.message)
+for (const table of tables) {
+  try {
+    const res = await fetch(`${url}/rest/v1/${table}?select=id&limit=1`, {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+    })
+    const missing = res.status === 404 || res.status === 406
+    const text = await res.text()
+    const schemaMiss = /schema cache|does not exist|Could not find/i.test(text)
+    check(
+      `Table public.${table}`,
+      res.ok || res.status === 200 || res.status === 401 || (res.status === 400 && !schemaMiss),
+      missing || schemaMiss
+        ? `Not found. Run supabase/schema.sql in the SQL Editor, then retry.`
+        : `HTTP ${res.status}: ${text.slice(0, 160)}`
+    )
+  } catch (err) {
+    check(`Table public.${table}`, false, err.message)
+  }
 }
 
+try {
+  const rpc = await fetch(`${url}/rest/v1/rpc/record_post_view`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${anonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      p_post_id: '00000000-0000-0000-0000-000000000000',
+      p_viewer_key: 'schema-check',
+    }),
+  })
+  const text = await rpc.text()
+  const schemaMiss = /schema cache|Could not find.*record_post_view/i.test(text)
+  check(
+    'RPC record_post_view',
+    !schemaMiss && rpc.status !== 404,
+    schemaMiss
+      ? 'Missing. Run supabase/schema.sql in the SQL Editor.'
+      : `HTTP ${rpc.status} (0 return for unknown post is OK)`
+  )
+} catch (err) {
+  check('RPC record_post_view', false, err.message)
+}
+
+const displaySiteUrl = siteUrl || 'https://www.aquickdraft.com'
+
 console.log('\nNext steps:')
-console.log('1. Run supabase/schema.sql in your Supabase SQL Editor')
-console.log(`2. Set Site URL to ${displaySiteUrl} in Authentication → URL Configuration (not localhost)`)
-console.log(`3. Redirect URLs should only include ${displaySiteUrl}/** (remove any localhost entries)`)
-console.log('4. Enable Google in Authentication → Providers → Google')
-console.log(`5. In Google Cloud Console, add JavaScript origin: ${displaySiteUrl}`)
-console.log('6. In Google Cloud Console, add redirect URI: https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback')
-console.log(`7. Set edge function secret: supabase secrets set SITE_URL=${displaySiteUrl}`)
-console.log('8. Rebuild and redeploy your app so VITE_SITE_URL is baked into the build\n')
+console.log('1. Open Supabase → SQL Editor')
+console.log('2. Paste and run the full contents of supabase/schema.sql')
+console.log('3. Confirm tables under Table Editor: profiles, drafts, forum_posts, post_views, forum_comments')
+console.log(`4. Auth → URL Configuration: Site URL = ${displaySiteUrl}`)
+console.log(`5. Redirect URLs include ${displaySiteUrl}/**`)
+console.log('6. Enable Google under Authentication → Providers')
+console.log('7. Set the same VITE_* vars in Vercel and redeploy\n')
 
 process.exit(ok ? 0 : 1)

@@ -4,6 +4,23 @@ import { getAuthRedirectUrl } from '@/utils/siteUrl'
 
 const AuthContext = React.createContext(null)
 
+async function ensureProfile(user) {
+  if (!supabase || !user) return
+  const displayName =
+    user.user_metadata?.full_name
+    || user.user_metadata?.name
+    || user.email?.split('@')[0]
+    || 'Writer'
+  await supabase.from('profiles').upsert(
+    {
+      id: user.id,
+      email: user.email,
+      display_name: displayName,
+    },
+    { onConflict: 'id' }
+  )
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = React.useState(null)
   const [loading, setLoading] = React.useState(true)
@@ -14,13 +31,19 @@ export function AuthProvider({ children }) {
       return
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const next = session?.user ?? null
+      if (next) await ensureProfile(next)
+      setUser(next)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      const next = session?.user ?? null
+      setUser(next)
+      if (next) {
+        void ensureProfile(next)
+      }
     })
 
     return () => subscription.unsubscribe()
