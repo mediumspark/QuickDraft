@@ -4,6 +4,7 @@ import { PenLine, Trash2 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import AiBadge from '@/components/AiBadge'
+import { plainPreview } from '@/utils/richText'
 import AuthModal from '@/components/AuthModal'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
@@ -79,7 +80,7 @@ export default function Drafts() {
                     <AiBadge status={d.ai_status} />
                   </div>
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {(d.body || '').slice(0, 160) || 'Empty draft'}
+                    {plainPreview(d.body, 160) || 'Empty draft'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
                     {d.word_count || 0} words · updated {new Date(d.updated_at).toLocaleString()}

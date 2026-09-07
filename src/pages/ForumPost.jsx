@@ -24,6 +24,13 @@ import {
   canSeeViewCount,
   canUseSelectionComments,
 } from '@/services/supabase'
+import {
+  looksLikeHtml,
+  stripHtml,
+  sanitizeHtml,
+  extractEmbeddedFonts,
+  ensureFontsFromCss,
+} from '@/utils/richText'
 import { cn } from '@/lib/utils'
 
 function getOffsetsInBody(bodyEl, range) {
@@ -208,6 +215,13 @@ export default function ForumPost() {
     await loadComments()
   }
 
+  const htmlBody = React.useMemo(() => {
+    if (!post?.body || !looksLikeHtml(post.body)) return null
+    const { fontsCss, bodyHtml } = extractEmbeddedFonts(post.body || '')
+    if (fontsCss) ensureFontsFromCss(fontsCss)
+    return sanitizeHtml(bodyHtml)
+  }, [post?.body])
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -229,7 +243,10 @@ export default function ForumPost() {
     )
   }
 
-  const segments = highlightSegments(post.body || '', selectionComments)
+  const segments = highlightSegments(
+    looksLikeHtml(post.body) ? stripHtml(post.body) : (post.body || ''),
+    selectionComments
+  )
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -258,23 +275,29 @@ export default function ForumPost() {
             <div
               ref={bodyRef}
               onMouseUp={handleMouseUp}
-              className="font-document text-lg leading-relaxed whitespace-pre-wrap select-text"
+              className="qd-prose font-document text-lg leading-relaxed select-text"
             >
-              {segments.map((seg, i) =>
-                seg.type === 'mark' ? (
-                  <mark
-                    key={i}
-                    className={cn(
-                      'bg-accent cursor-pointer rounded-sm px-0.5',
-                      activeCommentId === seg.commentId && 'ring-2 ring-primary'
-                    )}
-                    onClick={() => setActiveCommentId(seg.commentId)}
-                  >
-                    {seg.value}
-                  </mark>
-                ) : (
-                  <React.Fragment key={i}>{seg.value}</React.Fragment>
-                )
+              {htmlBody ? (
+                <div dangerouslySetInnerHTML={{ __html: htmlBody }} />
+              ) : (
+                <div className="whitespace-pre-wrap">
+                  {segments.map((seg, i) =>
+                    seg.type === 'mark' ? (
+                      <mark
+                        key={i}
+                        className={cn(
+                          'bg-accent cursor-pointer rounded-sm px-0.5',
+                          activeCommentId === seg.commentId && 'ring-2 ring-primary'
+                        )}
+                        onClick={() => setActiveCommentId(seg.commentId)}
+                      >
+                        {seg.value}
+                      </mark>
+                    ) : (
+                      <React.Fragment key={i}>{seg.value}</React.Fragment>
+                    )
+                  )}
+                </div>
               )}
             </div>
 

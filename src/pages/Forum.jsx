@@ -7,6 +7,7 @@ import AiBadge from '@/components/AiBadge'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthContext'
 import { listForumPosts, authorLabel, canSeeViewCount } from '@/services/supabase'
+import { plainPreview } from '@/utils/richText'
 
 export default function Forum() {
   const { user } = useAuth()
@@ -59,7 +60,7 @@ export default function Forum() {
                       <AiBadge status={p.ai_status} />
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-3 font-document">
-                      {(p.body || '').slice(0, 220)}
+                      {plainPreview(p.body, 220)}
                     </p>
                     <div className="flex flex-wrap gap-3 mt-3 text-xs text-muted-foreground">
                       <span>{authorLabel(p.profiles)}</span>

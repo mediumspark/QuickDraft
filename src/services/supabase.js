@@ -45,7 +45,13 @@ export function getViewerKey() {
 }
 
 export function countWords(text) {
-  const trimmed = (text || '').trim()
+  let plain = text || ''
+  if (/<\/?[a-z][\s\S]*>/i.test(plain)) {
+    const el = document.createElement('div')
+    el.innerHTML = plain
+    plain = el.textContent || el.innerText || ''
+  }
+  const trimmed = plain.replace(/\u00a0/g, ' ').trim()
   if (!trimmed) return 0
   return trimmed.split(/\s+/).length
 }

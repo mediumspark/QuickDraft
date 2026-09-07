@@ -7,12 +7,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { Spinner } from '@/components/ui/spinner'
 import AuthModal from '@/components/AuthModal'
 import ShareToForumModal from '@/components/ShareToForumModal'
 import AiBadge from '@/components/AiBadge'
+import RichTextEditor from '@/components/RichTextEditor'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -84,6 +84,7 @@ export default function Write() {
   const [shareOpen, setShareOpen] = React.useState(false)
   const [publishing, setPublishing] = React.useState(false)
   const [flash, setFlash] = React.useState(false)
+  const [editorKey, setEditorKey] = React.useState('boot')
   const rootRef = React.useRef(null)
 
   const wordCount = countWords(body)
@@ -109,6 +110,7 @@ export default function Write() {
         setWordGoal(data.word_goal ? String(data.word_goal) : '')
         setTimerSeconds(data.timer_seconds || 1500)
         setRemaining(data.timer_seconds || 1500)
+        setEditorKey(`cloud-${data.id}-${data.updated_at || Date.now()}`)
         setLoading(false)
         return
       }
@@ -124,6 +126,9 @@ export default function Write() {
           setTimerSeconds(local.timerSeconds || 1500)
           setRemaining(local.timerSeconds || 1500)
           setDraftId(local.id || null)
+          setEditorKey(`local-${local.id || 'new'}`)
+        } else {
+          setEditorKey('local-empty')
         }
       }
       setLoading(false)
@@ -463,17 +468,19 @@ export default function Write() {
         </div>
       )}
 
-      <div className="flex-1 container mx-auto px-4 py-8 max-w-3xl flex flex-col">
+      <div className="flex-1 container mx-auto px-4 py-8 max-w-5xl flex flex-col">
         {prompt && (
           <p className="text-sm italic text-muted-foreground mb-4 font-document border-l-2 border-primary/30 pl-3">
             {prompt}
           </p>
         )}
-        <Textarea
+        <RichTextEditor
+          contentKey={editorKey}
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={setBody}
           placeholder="Start writing…"
-          className="flex-1 min-h-[60vh] resize-none border-0 shadow-none focus-visible:ring-0 font-document text-lg leading-relaxed bg-transparent px-0"
+          className="flex-1"
+          minHeightClass="min-h-[55vh]"
         />
         <div className="flex justify-between text-xs text-muted-foreground pt-4 border-t mt-4">
           <span>

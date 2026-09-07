@@ -136,3 +136,72 @@ body {
     width: 100%;
   }
 }
+
+/* Rich text editor */
+.qd-editor-shell .tiptap,
+.qd-editor-shell .ProseMirror {
+  min-height: inherit;
+}
+
+.qd-editor p {
+  margin: 0 0 0.85em;
+  line-height: 1.7;
+}
+
+.qd-double-space .qd-editor p,
+.qd-double-space .ProseMirror p {
+  line-height: 2;
+}
+
+.qd-editor ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+  margin: 0 0 0.85em;
+}
+
+.qd-editor ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+  margin: 0 0 0.85em;
+}
+
+.qd-editor li {
+  margin: 0.2em 0;
+}
+
+.qd-editor p.is-editor-empty:first-child::before,
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.qd-prose {
+  font-family: var(--font-serif);
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.qd-prose p {
+  margin: 0 0 0.85em;
+}
+
+.qd-prose ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+  margin: 0 0 0.85em;
+}
+
+.qd-prose ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+  margin: 0 0 0.85em;
+}
+
+.qd-prose[data-qd-leading='2'],
+.qd-prose [data-qd-leading='2'] {
+  line-height: 2;
+}
