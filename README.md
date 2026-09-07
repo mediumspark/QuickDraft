@@ -41,7 +41,16 @@ The error `Could not find the table 'public.drafts' in the schema cache` means t
    - `forum_posts`
    - `post_views`
    - `forum_comments`
-5. Optionally run `npm run check:supabase` to verify tables + `record_post_view` RPC
+   - `prompt_of_the_day`
+5. Make yourself admin (after you’ve signed in once):
+
+```sql
+UPDATE public.profiles SET is_admin = true WHERE email = 'you@example.com';
+```
+
+6. Optionally run `npm run check:supabase` to verify tables + `record_post_view` RPC
+
+If you already applied an older schema, run [`supabase/prompt_of_the_day.sql`](supabase/prompt_of_the_day.sql) for the homepage prompt feature.
 
 The schema is idempotent (safe to re-run). It also reloads the PostgREST schema cache.
 

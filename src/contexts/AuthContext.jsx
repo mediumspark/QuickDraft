@@ -5,7 +5,7 @@ import { getAuthRedirectUrl } from '@/utils/siteUrl'
 const AuthContext = React.createContext(null)
 
 async function ensureProfile(user) {
-  if (!supabase || !user) return
+  if (!supabase || !user) return null
   const displayName =
     user.user_metadata?.full_name
     || user.user_metadata?.name
@@ -19,10 +19,25 @@ async function ensureProfile(user) {
     },
     { onConflict: 'id' }
   )
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, display_name, is_admin')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (error) {
+    const fallback = await supabase
+      .from('profiles')
+      .select('id, email, display_name')
+      .eq('id', user.id)
+      .maybeSingle()
+    return fallback.data ? { ...fallback.data, is_admin: false } : null
+  }
+  return data
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = React.useState(null)
+  const [profile, setProfile] = React.useState(null)
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
@@ -33,7 +48,12 @@ export function AuthProvider({ children }) {
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const next = session?.user ?? null
-      if (next) await ensureProfile(next)
+      if (next) {
+        const p = await ensureProfile(next)
+        setProfile(p)
+      } else {
+        setProfile(null)
+      }
       setUser(next)
       setLoading(false)
     })
@@ -42,7 +62,9 @@ export function AuthProvider({ children }) {
       const next = session?.user ?? null
       setUser(next)
       if (next) {
-        void ensureProfile(next)
+        void ensureProfile(next).then(setProfile)
+      } else {
+        setProfile(null)
       }
     })
 
@@ -67,10 +89,13 @@ export function AuthProvider({ children }) {
     if (!supabase) return
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    setProfile(null)
   }
 
   const value = {
     user,
+    profile,
+    isAdmin: !!profile?.is_admin,
     loading,
     signInWithGoogle,
     signOut,

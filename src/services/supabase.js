@@ -267,3 +267,35 @@ export function canSeeViewCount(post, currentUserId) {
 export function canUseSelectionComments(post) {
   return post?.ai_status === 'ai_free'
 }
+
+// ---- Prompt of the day ----
+
+export async function getPromptOfTheDay() {
+  if (!supabase) return { data: null, error: null, offline: true }
+  const { data, error } = await supabase
+    .from('prompt_of_the_day')
+    .select('body, updated_at')
+    .eq('id', 1)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function setPromptOfTheDay(body) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required') }
+
+  const payload = {
+    id: 1,
+    body: (body || '').trim(),
+    updated_at: new Date().toISOString(),
+    updated_by: user.id,
+  }
+
+  const { data, error } = await supabase
+    .from('prompt_of_the_day')
+    .upsert(payload, { onConflict: 'id' })
+    .select('body, updated_at')
+    .single()
+  return { data, error }
+}

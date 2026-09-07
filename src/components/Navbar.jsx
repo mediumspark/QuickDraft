@@ -1,10 +1,11 @@
 import * as React from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { User, PenLine } from 'lucide-react'
+import { User, PenLine, Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import AuthModal from '@/components/AuthModal'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -16,6 +17,7 @@ const links = [
 
 export default function Navbar({ transparent = false }) {
   const { user, loading, signInWithGoogle, isAuthConfigured } = useAuth()
+  const { resolved, toggleTheme } = useTheme()
   const [authOpen, setAuthOpen] = React.useState(false)
   const [googleLoading, setGoogleLoading] = React.useState(false)
 
@@ -68,6 +70,17 @@ export default function Navbar({ transparent = false }) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            title={resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className={cn(transparent && 'bg-card/40 backdrop-blur-sm')}
+          >
+            {resolved === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           {!loading && (
             user ? (
               <Link to="/account">
