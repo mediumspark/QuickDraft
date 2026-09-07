@@ -17,6 +17,42 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Upgrade legacy profiles tables (CREATE IF NOT EXISTS won't add columns)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS display_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Copy common legacy name fields into display_name when empty
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'full_name'
+  ) THEN
+    UPDATE public.profiles
+    SET display_name = COALESCE(NULLIF(display_name, ''), NULLIF(full_name, ''))
+    WHERE display_name IS NULL OR display_name = '';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'username'
+  ) THEN
+    UPDATE public.profiles
+    SET display_name = COALESCE(NULLIF(display_name, ''), NULLIF(username, ''))
+    WHERE display_name IS NULL OR display_name = '';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'name'
+  ) THEN
+    UPDATE public.profiles
+    SET display_name = COALESCE(NULLIF(display_name, ''), NULLIF(name, ''))
+    WHERE display_name IS NULL OR display_name = '';
+  END IF;
+END $$;
+
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;

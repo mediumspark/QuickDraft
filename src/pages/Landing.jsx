@@ -73,51 +73,6 @@ export default function Landing() {
             </div>
           </div>
         </section>
-
-        <section className="border-t border-border/70 py-24 md:py-28">
-          <div className="mx-auto max-w-3xl px-6 text-center">
-            <h2 className="font-display text-3xl md:text-4xl tracking-tight">
-              Fullscreen like F11 — then just write
-            </h2>
-            <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-              Open the writing room, hit fullscreen, set a timer and a word goal.
-              The browser chrome disappears. The page stays yours.
-            </p>
-          </div>
-        </section>
-
-        <section className="relative overflow-hidden border-y border-border/70 bg-[#dfe8e4]/55 py-24 md:py-28">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_80%_40%,rgba(26,95,82,0.14),transparent_60%)]"
-          />
-          <div className="relative mx-auto max-w-3xl px-6 text-center">
-            <h2 className="font-display text-3xl md:text-4xl tracking-tight">
-              Label the draft. Keep the trust.
-            </h2>
-            <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-              AI Free gets the full stage — public views and highlight comments.
-              AI Contributed shares quieter. AI Generated stays off the forum.
-            </p>
-          </div>
-        </section>
-
-        <section className="py-24 md:py-28">
-          <div className="mx-auto max-w-3xl px-6 text-center">
-            <h2 className="font-display text-3xl md:text-4xl tracking-tight">
-              Feedback that feels like a margin note
-            </h2>
-            <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-              Share when you’re ready. Readers leave general comments — or, on AI Free work,
-              highlight a passage the way you’d mark a draft in Docs.
-            </p>
-            <div className="mt-10">
-              <Link to="/write">
-                <Button size="lg">Open the writing room</Button>
-              </Link>
-            </div>
-          </div>
-        </section>
       </main>
       <Footer />
     </div>
