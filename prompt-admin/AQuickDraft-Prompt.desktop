@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AQuickDraft Prompt of the Day
+Comment=Publish the homepage prompt without opening Supabase
+Exec=/home/efulton/Desktop/QuickDraft/prompt-admin/run.sh
+Path=/home/efulton/Desktop/QuickDraft/prompt-admin
+Icon=accessories-text-editor
+Terminal=false
+Categories=Office;Utility;

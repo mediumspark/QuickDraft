@@ -123,6 +123,10 @@ export default function ForumPost() {
 
   const handleMouseUp = () => {
     if (!allowSelection || !bodyRef.current) return
+    if (!user) {
+      setAuthOpen(true)
+      return
+    }
     const sel = window.getSelection()
     if (!sel || sel.isCollapsed || !sel.rangeCount) {
       setSelectionDraft(null)
@@ -252,18 +256,28 @@ export default function ForumPost() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-10 max-w-6xl">
-        <Link to="/forum" className="text-sm text-muted-foreground hover:text-foreground">← Forum</Link>
+        <div className="text-sm text-muted-foreground">
+          <Link to="/forum" className="hover:text-foreground">Forum</Link>
+          {post.forum_boards?.slug && (
+            <>
+              <span className="mx-1.5">/</span>
+              <Link to={`/forum/${post.forum_boards.slug}`} className="hover:text-foreground">
+                {post.forum_boards.name}
+              </Link>
+            </>
+          )}
+        </div>
 
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
           <article>
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <h1 className="text-3xl font-bold">{post.title}</h1>
-              <AiBadge status={post.ai_status} />
+              {post.post_kind !== 'discussion' && <AiBadge status={post.ai_status} />}
             </div>
             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-6">
               <span>{authorLabel(post.profiles)}</span>
               <span>{new Date(post.created_at).toLocaleString()}</span>
-              {showViews && (
+              {showViews && post.post_kind !== 'discussion' && (
                 <span className="inline-flex items-center gap-1">
                   <Eye className="h-4 w-4" />
                   {post.view_count || 0} views
@@ -326,10 +340,14 @@ export default function ForumPost() {
             )}
 
             <section className="mt-10 border-t pt-8">
-              <h2 className="text-xl font-semibold mb-4">Comments on the whole work</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                {post.post_kind === 'discussion' ? 'Replies' : 'Comments on the whole work'}
+              </h2>
               <div className="space-y-3 mb-6">
                 {generalComments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No general comments yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {post.post_kind === 'discussion' ? 'No replies yet.' : 'No general comments yet.'}
+                  </p>
                 ) : (
                   generalComments.map((c) => (
                     <div key={c.id} className="rounded-lg border p-3">
@@ -349,21 +367,31 @@ export default function ForumPost() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>Leave a general comment</Label>
-                <Textarea
-                  value={generalBody}
-                  onChange={(e) => setGeneralBody(e.target.value)}
-                  placeholder={user ? 'Your thoughts on the whole piece…' : 'Sign in to comment'}
-                  rows={3}
-                  disabled={!user}
-                />
-                <Button onClick={submitGeneralComment} disabled={posting || !user}>
-                  {user ? 'Post comment' : 'Sign in to comment'}
-                </Button>
-                {!user && (
-                  <Button variant="outline" className="ml-2" onClick={() => setAuthOpen(true)}>
-                    Sign in
-                  </Button>
+                <Label>{post.post_kind === 'discussion' ? 'Reply' : 'Leave a general comment'}</Label>
+                {user ? (
+                  <>
+                    <Textarea
+                      value={generalBody}
+                      onChange={(e) => setGeneralBody(e.target.value)}
+                      placeholder={
+                        post.post_kind === 'discussion'
+                          ? 'Write a reply…'
+                          : 'Your thoughts on the whole piece…'
+                      }
+                      rows={3}
+                    />
+                    <Button onClick={submitGeneralComment} disabled={posting || !generalBody.trim()}>
+                      {posting ? <Spinner size="sm" /> : null}
+                      {post.post_kind === 'discussion' ? 'Reply' : 'Post comment'}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Sign in to comment in the forums.
+                    </p>
+                    <Button type="button" onClick={() => setAuthOpen(true)}>Sign in to comment</Button>
+                  </div>
                 )}
               </div>
             </section>

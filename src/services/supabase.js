@@ -141,13 +141,74 @@ export async function deleteDraft(id) {
 
 // ---- Forum posts ----
 
-export async function listForumPosts() {
-  if (!supabase) return { data: [], error: null, offline: true }
+export async function listForumBoards() {
+  if (!supabase) {
+    const { FORUM_BOARDS } = await import('@/data/forumBoards')
+    return {
+      data: FORUM_BOARDS.map((b) => ({
+        slug: b.slug,
+        name: b.name,
+        description: b.description,
+        kind: b.kind,
+        sort_order: b.sortOrder,
+      })),
+      error: null,
+      offline: true,
+    }
+  }
   const { data, error } = await supabase
+    .from('forum_boards')
+    .select('*')
+    .order('sort_order', { ascending: true })
+  return { data: data || [], error }
+}
+
+export async function getForumBoard(slug) {
+  if (!supabase) {
+    const { boardBySlug } = await import('@/data/forumBoards')
+    const b = boardBySlug(slug)
+    return {
+      data: b
+        ? {
+            slug: b.slug,
+            name: b.name,
+            description: b.description,
+            kind: b.kind,
+            sort_order: b.sortOrder,
+          }
+        : null,
+      error: b ? null : new Error('Board not found'),
+      offline: true,
+    }
+  }
+  const { data, error } = await supabase
+    .from('forum_boards')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function listForumPosts(boardSlug) {
+  if (!supabase) return { data: [], error: null, offline: true }
+  let query = supabase
     .from('forum_posts')
-    .select('*, profiles!user_id(display_name, email)')
+    .select('*, profiles!user_id(display_name, email), forum_boards!board_id(slug, name, kind)')
     .eq('status', 'published')
     .order('created_at', { ascending: false })
+
+  if (boardSlug) {
+    const { data: board, error: boardError } = await getForumBoard(boardSlug)
+    if (boardError || !board?.id) {
+      // offline fallback boards have no id — filter client-side after fetch if needed
+      if (!board) return { data: [], error: boardError || new Error('Board not found') }
+    }
+    if (board?.id) {
+      query = query.eq('board_id', board.id)
+    }
+  }
+
+  const { data, error } = await query
   return { data: data || [], error }
 }
 
@@ -155,15 +216,24 @@ export async function getForumPost(id) {
   if (!supabase) return { data: null, error: null, offline: true }
   const { data, error } = await supabase
     .from('forum_posts')
-    .select('*, profiles!user_id(display_name, email)')
+    .select('*, profiles!user_id(display_name, email), forum_boards!board_id(slug, name, kind)')
     .eq('id', id)
     .single()
   return { data, error }
 }
 
-export async function publishToForum({ title, body, draftId, aiStatus, feedbackVisibility }) {
+export async function publishToForum({
+  title,
+  body,
+  draftId,
+  aiStatus,
+  feedbackVisibility,
+  boardId,
+  boardSlug,
+  postKind = 'writing',
+}) {
   if (!supabase) return { data: null, error: new Error('Backend not configured') }
-  if (aiStatus === 'ai_generated') {
+  if (postKind === 'writing' && aiStatus === 'ai_generated') {
     return { data: null, error: new Error('AI-generated writing can’t be shared to the forum.') }
   }
 
@@ -171,20 +241,45 @@ export async function publishToForum({ title, body, draftId, aiStatus, feedbackV
   if (!user) return { data: null, error: new Error('Sign in required') }
   await ensureCurrentProfile(user)
 
+  let resolvedBoardId = boardId || null
+  if (!resolvedBoardId && boardSlug) {
+    const { data: board, error: boardError } = await getForumBoard(boardSlug)
+    if (boardError || !board?.id) {
+      return { data: null, error: boardError || new Error('Choose a forum board') }
+    }
+    resolvedBoardId = board.id
+  }
+  if (!resolvedBoardId) {
+    return { data: null, error: new Error('Choose a forum board') }
+  }
+
   const { data, error } = await supabase
     .from('forum_posts')
     .insert({
       user_id: user.id,
       draft_id: draftId || null,
+      board_id: resolvedBoardId,
+      post_kind: postKind,
       title: title || 'Untitled',
       body: body || '',
       status: 'published',
-      ai_status: aiStatus,
+      ai_status: postKind === 'discussion' ? 'ai_free' : aiStatus,
       feedback_visibility: feedbackVisibility || 'accounts_only',
     })
-    .select()
+    .select('*, forum_boards!board_id(slug, name, kind)')
     .single()
   return { data, error }
+}
+
+export async function createDiscussionPost({ boardSlug, title, body }) {
+  return publishToForum({
+    title,
+    body,
+    boardSlug,
+    postKind: 'discussion',
+    aiStatus: 'ai_free',
+    feedbackVisibility: 'accounts_only',
+  })
 }
 
 export async function updateForumPost(id, patch) {
@@ -265,7 +360,7 @@ export function canSeeViewCount(post, currentUserId) {
 }
 
 export function canUseSelectionComments(post) {
-  return post?.ai_status === 'ai_free'
+  return post?.post_kind !== 'discussion' && post?.ai_status === 'ai_free'
 }
 
 // ---- Prompt of the day ----

@@ -264,7 +264,7 @@ export default function Write() {
     setShareOpen(true)
   }
 
-  const handlePublish = async ({ title: postTitle, feedbackVisibility }) => {
+  const handlePublish = async ({ title: postTitle, feedbackVisibility, boardSlug }) => {
     setPublishing(true)
     try {
       let ensureId = draftId
@@ -286,11 +286,13 @@ export default function Write() {
         draftId: ensureId,
         aiStatus,
         feedbackVisibility,
+        boardSlug,
+        postKind: 'writing',
       })
       if (error) throw error
       addToast('Published to the forum')
       setShareOpen(false)
-      navigate(`/forum/${data.id}`)
+      navigate(`/forum/post/${data.id}`)
     } catch (err) {
       addToast(err.message || 'Publish failed', 'error')
     } finally {
