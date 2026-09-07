@@ -8,9 +8,9 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-                <span className="text-primary-foreground font-bold text-xs">AQD</span>
+                <span className="text-primary-foreground font-bold text-[10px] tracking-wide">AQD</span>
               </div>
-              <span className="font-semibold text-lg">AQuickDraft</span>
+              <span className="font-display font-semibold text-lg tracking-tight">AQuickDraft</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-sm">
               A quiet place for amateur writers — timed sessions, honest AI labels, and peer feedback.

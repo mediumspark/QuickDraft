@@ -14,7 +14,7 @@ const links = [
   { to: '/about', label: 'About' },
 ]
 
-export default function Navbar() {
+export default function Navbar({ transparent = false }) {
   const { user, loading, signInWithGoogle, isAuthConfigured } = useAuth()
   const [authOpen, setAuthOpen] = React.useState(false)
   const [googleLoading, setGoogleLoading] = React.useState(false)
@@ -34,16 +34,23 @@ export default function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur">
+    <header
+      className={cn(
+        'z-40 w-full',
+        transparent
+          ? 'absolute top-0 left-0 right-0 border-transparent bg-transparent'
+          : 'sticky top-0 border-b bg-background/90 backdrop-blur-md'
+      )}
+    >
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-4">
-        <Link to="/" className="flex items-center gap-2 shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
-            <span className="text-primary-foreground font-bold text-xs">AQD</span>
+        <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary transition-transform group-hover:scale-[1.03]">
+            <span className="text-primary-foreground font-bold text-[10px] tracking-wide">AQD</span>
           </div>
-          <span className="font-semibold text-lg">AQuickDraft</span>
+          <span className="font-display text-lg font-semibold tracking-tight">AQuickDraft</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-5 text-sm">
+        <nav className="hidden md:flex items-center gap-6 text-sm">
           {links.map((l) => (
             <NavLink
               key={l.to}
@@ -64,7 +71,7 @@ export default function Navbar() {
           {!loading && (
             user ? (
               <Link to="/account">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className={cn(transparent && 'bg-card/60 backdrop-blur-sm')}>
                   <User className="h-4 w-4 mr-1" />
                   Account
                 </Button>
@@ -75,7 +82,7 @@ export default function Navbar() {
                 onClick={handleGoogleSignIn}
                 loading={googleLoading}
                 label="Sign in"
-                className="w-auto"
+                className={cn('w-auto', transparent && 'bg-card/60 backdrop-blur-sm')}
               />
             )
           )}

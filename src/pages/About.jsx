@@ -6,7 +6,7 @@ export default function About() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-16 max-w-3xl">
-        <h1 className="text-4xl font-bold mb-6">About AQuickDraft</h1>
+        <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight mb-6">About AQuickDraft</h1>
         <div className="space-y-4 text-muted-foreground">
           <p>
             AQuickDraft is a writing space for amateurs — people who write for practice, for stories,
