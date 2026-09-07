@@ -336,22 +336,6 @@ export default function Write() {
               <AiBadge status={aiStatus} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={cn('font-mono text-lg tabular-nums', remaining === 0 && 'text-primary')}>
-                {formatTime(remaining)}
-              </span>
-              <Button size="sm" variant="outline" onClick={() => setRunning((r) => !r)}>
-                {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setRunning(false)
-                  setRemaining(timerSeconds)
-                }}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
               <Button size="sm" variant="outline" onClick={handleSave} disabled={saving}>
                 {saving ? <Spinner size="sm" /> : <Save className="h-4 w-4" />}
                 Save
@@ -376,13 +360,33 @@ export default function Write() {
           </div>
 
           <div className="container mx-auto px-4 pb-3">
-            <button
-              type="button"
-              onClick={() => setSessionOpen((o) => !o)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              {sessionOpen ? 'Hide session options' : 'Session options (timer, prompt, AI label)'}
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setSessionOpen((o) => !o)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                {sessionOpen ? 'Hide session options' : 'Session options (prompt, AI label)'}
+              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={cn('font-mono text-lg tabular-nums', remaining === 0 && 'text-primary')}>
+                  {formatTime(remaining)}
+                </span>
+                <Button size="sm" variant="outline" onClick={() => setRunning((r) => !r)}>
+                  {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setRunning(false)
+                    setRemaining(timerSeconds)
+                  }}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
             {sessionOpen && (
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1">
