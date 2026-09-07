@@ -160,6 +160,15 @@ export async function listForumBoards() {
     .from('forum_boards')
     .select('*')
     .order('sort_order', { ascending: true })
+
+  if (error && /schema cache|does not exist|Could not find/i.test(error.message || '')) {
+    return {
+      data: [],
+      error: new Error(
+        'Forum boards are not in your Supabase database yet. Run supabase/APPLY_forum_boards.sql in the SQL Editor, then refresh.'
+      ),
+    }
+  }
   return { data: data || [], error }
 }
 
@@ -245,7 +254,15 @@ export async function publishToForum({
   if (!resolvedBoardId && boardSlug) {
     const { data: board, error: boardError } = await getForumBoard(boardSlug)
     if (boardError || !board?.id) {
-      return { data: null, error: boardError || new Error('Choose a forum board') }
+      const missing = /schema cache|does not exist|Could not find/i.test(boardError?.message || '')
+      return {
+        data: null,
+        error: new Error(
+          missing
+            ? 'Forum boards table missing. Run supabase/APPLY_forum_boards.sql in the Supabase SQL Editor.'
+            : (boardError?.message || 'Choose a forum board')
+        ),
+      }
     }
     resolvedBoardId = board.id
   }
