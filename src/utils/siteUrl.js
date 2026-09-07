@@ -1,19 +1,23 @@
 /**
- * Canonical app URL for OAuth redirects and dashboard setup.
- * Set VITE_SITE_URL in .env for production (e.g. https://www.aquickdraft.com).
- * Falls back to the current browser origin when unset.
+ * Canonical production URL for SEO, OAuth redirects, and absolute links.
+ * Always resolves to the live site — never localhost.
  */
+const PRODUCTION_URL = 'https://www.aquickdraft.com'
+
 export function getSiteUrl() {
-  const configured = import.meta.env.VITE_SITE_URL
-  if (configured && !configured.includes('your-site')) {
-    return configured.replace(/\/$/, '')
+  const configured = import.meta.env.VITE_SITE_URL?.replace(/\/$/, '')
+  if (
+    configured &&
+    !configured.includes('your-site') &&
+    !configured.includes('localhost') &&
+    !configured.includes('127.0.0.1')
+  ) {
+    return configured
   }
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin
-  }
-  return ''
+  return PRODUCTION_URL
 }
 
+/** Google / Supabase OAuth must always return users to the live site. */
 export function getAuthRedirectUrl(path = '/') {
   const base = getSiteUrl()
   const normalizedPath = path.startsWith('/') ? path : `/${path}`

@@ -50,7 +50,7 @@ function check(label, pass, hint) {
 }
 
 check('VITE_SITE_URL is set', !!siteUrl, 'Add VITE_SITE_URL=https://www.aquickdraft.com to .env')
-check('VITE_SITE_URL is not localhost', siteUrl && !siteUrl.includes('localhost'), 'Use your production URL')
+check('VITE_SITE_URL is not localhost', siteUrl && !siteUrl.includes('localhost') && !siteUrl.includes('127.0.0.1'), 'Use your production URL')
 check('VITE_SUPABASE_URL is set', !!url, 'Add VITE_SUPABASE_URL to .env')
 check('VITE_SUPABASE_URL is not a placeholder', url && !url.includes('your-project'), 'Replace with your project URL')
 check('VITE_SUPABASE_ANON_KEY is set', !!anonKey, 'Add VITE_SUPABASE_ANON_KEY to .env')
@@ -107,8 +107,8 @@ try {
 
 console.log('\nNext steps:')
 console.log('1. Run supabase/schema.sql in your Supabase SQL Editor')
-console.log(`2. Set Site URL to ${displaySiteUrl} in Authentication → URL Configuration`)
-console.log(`3. Add ${displaySiteUrl}/** to Redirect URLs`)
+console.log(`2. Set Site URL to ${displaySiteUrl} in Authentication → URL Configuration (not localhost)`)
+console.log(`3. Redirect URLs should only include ${displaySiteUrl}/** (remove any localhost entries)`)
 console.log('4. Enable Google in Authentication → Providers → Google')
 console.log(`5. In Google Cloud Console, add JavaScript origin: ${displaySiteUrl}`)
 console.log('6. In Google Cloud Console, add redirect URI: https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback')

@@ -1,0 +1,35 @@
+# AQuickDraft
+
+> Agreement templates for game developers, technical folks, and college students.
+
+AQuickDraft (https://www.aquickdraft.com) helps indie developers, technical collaborators, and students draft affordable agreement templates. Drafting and reading the full agreement are free. Pay $0.99 per document to edit a saved draft, download a PDF, or share a read-only link (reg. $5).
+
+## Audience
+
+- Game developers (revenue splits with artists, contractors, co-devs)
+- Technical folks (side projects, freelance collaborations)
+- College students (class projects, club startups)
+
+## Agreement types
+
+- Revenue sharing: https://www.aquickdraft.com/templates/revenue-sharing
+- Profit sharing: https://www.aquickdraft.com/templates/profit-sharing
+- Commission: https://www.aquickdraft.com/templates/commission
+- NDA: https://www.aquickdraft.com/templates/nda
+
+## Key pages
+
+- Home: https://www.aquickdraft.com/
+- Guide: https://www.aquickdraft.com/guide
+- FAQ: https://www.aquickdraft.com/faq
+- Pricing: https://www.aquickdraft.com/pricing
+- About: https://www.aquickdraft.com/about
+- Contact: https://www.aquickdraft.com/contact
+
+## Pricing
+
+- Free: drafting and reading the full agreement
+- $0.99: unlock editing for a saved draft (reg. $5)
+- $0.99: PDF download per document (reg. $5)
+- $0.99: shareable read-only link per document (reg. $5)
+- $0.99: Word boilerplate downloads (reg. $5)

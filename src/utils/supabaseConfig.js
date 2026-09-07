@@ -24,7 +24,10 @@ export function getSupabaseConfigStatus() {
 
   if (!import.meta.env.VITE_SITE_URL) {
     issues.push('VITE_SITE_URL is not set — add your production URL to .env (e.g. https://www.aquickdraft.com)')
-  } else if (import.meta.env.VITE_SITE_URL.includes('localhost')) {
+  } else if (
+    import.meta.env.VITE_SITE_URL.includes('localhost') ||
+    import.meta.env.VITE_SITE_URL.includes('127.0.0.1')
+  ) {
     issues.push('VITE_SITE_URL should be your production URL, not localhost')
   }
 
