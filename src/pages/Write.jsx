@@ -2,6 +2,7 @@ import * as React from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Pause, Play, RotateCcw, Save, Share2, Eye, EyeOff, Shuffle, ArrowLeft,
+  Maximize2, Minimize2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +37,30 @@ function saveLocal(draft) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(draft))
 }
 
+function getFullscreenElement() {
+  return (
+    document.fullscreenElement
+    || document.webkitFullscreenElement
+    || document.msFullscreenElement
+    || null
+  )
+}
+
+async function requestBrowserFullscreen(el) {
+  const target = el || document.documentElement
+  if (target.requestFullscreen) return target.requestFullscreen()
+  if (target.webkitRequestFullscreen) return target.webkitRequestFullscreen()
+  if (target.msRequestFullscreen) return target.msRequestFullscreen()
+  throw new Error('Fullscreen is not supported in this browser')
+}
+
+async function exitBrowserFullscreen() {
+  if (!getFullscreenElement()) return
+  if (document.exitFullscreen) return document.exitFullscreen()
+  if (document.webkitExitFullscreen) return document.webkitExitFullscreen()
+  if (document.msExitFullscreen) return document.msExitFullscreen()
+}
+
 export default function Write() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -51,6 +76,7 @@ export default function Write() {
   const [remaining, setRemaining] = React.useState(25 * 60)
   const [running, setRunning] = React.useState(false)
   const [chromeVisible, setChromeVisible] = React.useState(true)
+  const [isFullscreen, setIsFullscreen] = React.useState(false)
   const [draftId, setDraftId] = React.useState(id || null)
   const [saving, setSaving] = React.useState(false)
   const [loading, setLoading] = React.useState(!!id)
@@ -58,6 +84,7 @@ export default function Write() {
   const [shareOpen, setShareOpen] = React.useState(false)
   const [publishing, setPublishing] = React.useState(false)
   const [flash, setFlash] = React.useState(false)
+  const rootRef = React.useRef(null)
 
   const wordCount = countWords(body)
   const goalNum = wordGoal ? Number(wordGoal) : null
@@ -156,12 +183,43 @@ export default function Write() {
   }, [user, draftId, title, body, prompt, aiStatus, goalNum, timerSeconds, id, navigate])
 
   React.useEffect(() => {
+    const syncFullscreen = () => {
+      const active = !!getFullscreenElement()
+      setIsFullscreen(active)
+      if (active) setChromeVisible(false)
+      else setChromeVisible(true)
+    }
+    syncFullscreen()
+    document.addEventListener('fullscreenchange', syncFullscreen)
+    document.addEventListener('webkitfullscreenchange', syncFullscreen)
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreen)
+      document.removeEventListener('webkitfullscreenchange', syncFullscreen)
+    }
+  }, [])
+
+  React.useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') setChromeVisible((v) => !v)
+      // Browser owns Esc while fullscreen (exits F11-style mode).
+      if (e.key === 'Escape' && !getFullscreenElement()) {
+        setChromeVisible((v) => !v)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  const toggleFullscreen = async () => {
+    try {
+      if (getFullscreenElement()) {
+        await exitBrowserFullscreen()
+      } else {
+        await requestBrowserFullscreen(rootRef.current || document.documentElement)
+      }
+    } catch (err) {
+      addToast(err?.message || 'Could not enter fullscreen', 'error')
+    }
+  }
 
   const handleSave = async () => {
     if (!user) {
@@ -248,7 +306,14 @@ export default function Write() {
   }
 
   return (
-    <div className={cn('min-h-screen flex flex-col bg-background', flash && 'ring-4 ring-primary ring-inset')}>
+    <div
+      ref={rootRef}
+      className={cn(
+        'min-h-screen flex flex-col bg-background',
+        isFullscreen && 'h-screen min-h-screen overflow-auto',
+        flash && 'ring-4 ring-primary ring-inset'
+      )}
+    >
       {chromeVisible && (
         <div className="border-b bg-card/90 backdrop-blur sticky top-0 z-20">
           <div className="container mx-auto px-4 py-3 flex flex-wrap items-center gap-2 justify-between">
@@ -288,6 +353,15 @@ export default function Write() {
               <Button size="sm" onClick={handleShareClick} disabled={aiStatus === 'ai_generated'}>
                 <Share2 className="h-4 w-4" />
                 Share
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? 'Exit fullscreen (Esc)' : 'Enter fullscreen (like F11)'}
+              >
+                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                {isFullscreen ? 'Exit' : 'Fullscreen'}
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setChromeVisible(false)} title="Hide controls (Esc)">
                 <EyeOff className="h-4 w-4" />
@@ -367,14 +441,26 @@ export default function Write() {
       )}
 
       {!chromeVisible && (
-        <button
-          type="button"
-          onClick={() => setChromeVisible(true)}
-          className="fixed top-3 right-3 z-30 rounded-full border bg-card/90 p-2 shadow-sm text-muted-foreground hover:text-foreground"
-          title="Show controls (Esc)"
-        >
-          <Eye className="h-4 w-4" />
-        </button>
+        <div className="fixed top-3 right-3 z-30 flex items-center gap-2">
+          {isFullscreen && (
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="rounded-full border bg-card/90 p-2 shadow-sm text-muted-foreground hover:text-foreground"
+              title="Exit fullscreen (Esc)"
+            >
+              <Minimize2 className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setChromeVisible(true)}
+            className="rounded-full border bg-card/90 p-2 shadow-sm text-muted-foreground hover:text-foreground"
+            title="Show controls"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+        </div>
       )}
 
       <div className="flex-1 container mx-auto px-4 py-8 max-w-3xl flex flex-col">
@@ -394,7 +480,11 @@ export default function Write() {
             {wordCount} word{wordCount === 1 ? '' : 's'}
             {goalNum ? ` / ${goalNum} goal` : ''}
           </span>
-          <span>Esc toggles controls</span>
+          <span>
+            {isFullscreen
+              ? 'Esc exits fullscreen'
+              : 'Fullscreen hides the browser chrome · Esc toggles controls'}
+          </span>
         </div>
       </div>
 

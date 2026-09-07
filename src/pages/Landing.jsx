@@ -8,7 +8,7 @@ const features = [
   {
     icon: PenLine,
     title: 'Fullscreen writing room',
-    desc: 'A quiet, distraction-free page for getting words down.',
+    desc: 'One click goes true fullscreen — like F11 — so the browser chrome gets out of the way.',
   },
   {
     icon: Timer,
