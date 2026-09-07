@@ -1,14 +1,4 @@
 import { Link } from 'react-router-dom'
-<<<<<<< HEAD
-=======
-
-const templateLinks = [
-  { to: '/templates/revenue-sharing', label: 'Revenue Sharing' },
-  { to: '/templates/profit-sharing', label: 'Profit Sharing' },
-  { to: '/templates/commission', label: 'Commission' },
-  { to: '/templates/nda', label: 'NDA' },
-]
->>>>>>> refs/remotes/origin/main
 
 export default function Footer() {
   return (
@@ -23,7 +13,6 @@ export default function Footer() {
               <span className="font-semibold text-lg">AQuickDraft</span>
             </div>
             <p className="text-sm text-muted-foreground max-w-sm">
-<<<<<<< HEAD
               A quiet place for amateur writers — timed sessions, honest AI labels, and peer feedback.
             </p>
           </div>
@@ -42,21 +31,11 @@ export default function Footer() {
                 <li><Link to="/about" className="hover:text-foreground">About</Link></li>
                 <li><Link to="/account" className="hover:text-foreground">Account</Link></li>
               </ul>
-=======
-              Agreement templates for your startup, side project, or student venture.
-              Draft fast, read free, pay $0.99 to edit, download, or share.
-            </p>
-            <div className="mt-4 max-w-md">
->>>>>>> refs/remotes/origin/main
             </div>
           </div>
         </div>
         <div className="border-t mt-8 pt-6 text-center text-xs text-muted-foreground">
-<<<<<<< HEAD
           © {new Date().getFullYear()} AQuickDraft. Write freely. Label honestly.
-=======
-          © {new Date().getFullYear()} AQuickDraft.
->>>>>>> refs/remotes/origin/main
         </div>
       </div>
     </footer>
