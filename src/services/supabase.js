@@ -268,6 +268,10 @@ export async function publishToForum({
     })
     .select('*, forum_boards!board_id(slug, name, kind)')
     .single()
+
+  if (!error && data) {
+    void notifyFollowersOfNewPost(data)
+  }
   return { data, error }
 }
 
@@ -288,8 +292,13 @@ export async function updateForumPost(id, patch) {
     .from('forum_posts')
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq('id', id)
-    .select()
+    .select('*, forum_boards!board_id(slug, name, kind), profiles!user_id(display_name, email)')
     .single()
+
+  const contentChanged = patch && ('body' in patch || 'title' in patch)
+  if (!error && data && contentChanged) {
+    void notifyWatchersOfPostUpdate(data)
+  }
   return { data, error }
 }
 
@@ -393,4 +402,183 @@ export async function setPromptOfTheDay(body) {
     .select('body, updated_at')
     .single()
   return { data, error }
+}
+
+// ---- Follows, watches, notifications ----
+
+export async function getProfile(userId) {
+  if (!supabase) return { data: null, error: null, offline: true }
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, display_name, created_at')
+    .eq('id', userId)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function listWriterPosts(userId) {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const { data, error } = await supabase
+    .from('forum_posts')
+    .select('*, forum_boards!board_id(slug, name, kind)')
+    .eq('user_id', userId)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function isFollowingUser(followingId) {
+  if (!supabase) return { following: false, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { following: false }
+  const { data, error } = await supabase
+    .from('user_follows')
+    .select('following_id')
+    .eq('follower_id', user.id)
+    .eq('following_id', followingId)
+    .maybeSingle()
+  return { following: !!data, error }
+}
+
+export async function followUser(followingId) {
+  if (!supabase) return { error: new Error('Backend not configured') }
+  const user = await getCurrentUser()
+  if (!user) return { error: new Error('Sign in required') }
+  if (user.id === followingId) return { error: new Error('You can’t follow yourself') }
+  await ensureCurrentProfile(user)
+  const { error } = await supabase.from('user_follows').insert({
+    follower_id: user.id,
+    following_id: followingId,
+  })
+  return { error }
+}
+
+export async function unfollowUser(followingId) {
+  if (!supabase) return { error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { error: new Error('Sign in required') }
+  const { error } = await supabase
+    .from('user_follows')
+    .delete()
+    .eq('follower_id', user.id)
+    .eq('following_id', followingId)
+  return { error }
+}
+
+export async function isWatchingProject(postId) {
+  if (!supabase) return { watching: false, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { watching: false }
+  const { data, error } = await supabase
+    .from('project_watches')
+    .select('post_id')
+    .eq('watcher_id', user.id)
+    .eq('post_id', postId)
+    .maybeSingle()
+  return { watching: !!data, error }
+}
+
+export async function watchProject(postId) {
+  if (!supabase) return { error: new Error('Backend not configured') }
+  const user = await getCurrentUser()
+  if (!user) return { error: new Error('Sign in required') }
+  await ensureCurrentProfile(user)
+  const { error } = await supabase.from('project_watches').insert({
+    watcher_id: user.id,
+    post_id: postId,
+  })
+  return { error }
+}
+
+export async function unwatchProject(postId) {
+  if (!supabase) return { error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { error: new Error('Sign in required') }
+  const { error } = await supabase
+    .from('project_watches')
+    .delete()
+    .eq('watcher_id', user.id)
+    .eq('post_id', postId)
+  return { error }
+}
+
+async function insertNotifications(rows) {
+  if (!rows.length || !supabase) return { error: null }
+  const { error } = await supabase.from('notifications').insert(rows)
+  return { error }
+}
+
+export async function notifyFollowersOfNewPost(post) {
+  if (!supabase || !post?.id || !post?.user_id) return
+  const { data: followers } = await supabase
+    .from('user_follows')
+    .select('follower_id')
+    .eq('following_id', post.user_id)
+  const rows = (followers || [])
+    .filter((f) => f.follower_id !== post.user_id)
+    .map((f) => ({
+      user_id: f.follower_id,
+      actor_id: post.user_id,
+      post_id: post.id,
+      type: 'new_post',
+      message: `shared “${post.title || 'Untitled'}”`,
+    }))
+  await insertNotifications(rows)
+}
+
+export async function notifyWatchersOfPostUpdate(post) {
+  if (!supabase || !post?.id || !post?.user_id) return
+  const { data: watchers } = await supabase
+    .from('project_watches')
+    .select('watcher_id')
+    .eq('post_id', post.id)
+  const rows = (watchers || [])
+    .filter((w) => w.watcher_id !== post.user_id)
+    .map((w) => ({
+      user_id: w.watcher_id,
+      actor_id: post.user_id,
+      post_id: post.id,
+      type: 'post_updated',
+      message: `updated “${post.title || 'Untitled'}”`,
+    }))
+  await insertNotifications(rows)
+}
+
+export async function listNotifications({ limit = 40 } = {}) {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { data: [], error: new Error('Sign in required') }
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*, profiles!actor_id(display_name, email), forum_posts!post_id(id, title)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return { data: data || [], error }
+}
+
+export async function countUnreadNotifications() {
+  if (!supabase) return { count: 0, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { count: 0 }
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .is('read_at', null)
+  return { count: count || 0, error }
+}
+
+export async function markNotificationsRead(ids) {
+  if (!supabase) return { error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { error: new Error('Sign in required') }
+  const query = supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .is('read_at', null)
+  if (ids?.length) query.in('id', ids)
+  const { error } = await query
+  return { error }
 }

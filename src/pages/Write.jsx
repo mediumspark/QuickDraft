@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   AI_STATUS, WRITING_PROMPTS, TIMER_PRESETS, formatTime,
 } from '@/data/writing'
+import { GENRE_BOARDS } from '@/data/forumBoards'
 import {
   countWords, getDraft, saveDraft, publishToForum, isSupabaseConfigured,
 } from '@/services/supabase'
@@ -259,12 +260,21 @@ export default function Write() {
   const handleShareClick = () => {
     if (!user) {
       setAuthOpen(true)
+      addToast('Sign in so drafts save to your account before sharing', 'error')
+      return
+    }
+    if (aiStatus === 'ai_generated') {
+      addToast('AI-generated writing can’t be shared to a forum', 'error')
       return
     }
     setShareOpen(true)
   }
 
   const handlePublish = async ({ title: postTitle, feedbackVisibility, boardSlug }) => {
+    if (!boardSlug) {
+      addToast('Choose which forum to share to', 'error')
+      return
+    }
     setPublishing(true)
     try {
       let ensureId = draftId
@@ -279,6 +289,10 @@ export default function Write() {
       })
       if (saved.error) throw saved.error
       ensureId = saved.data?.id || draftId
+      if (saved.data?.id) {
+        setDraftId(saved.data.id)
+        if (!id) navigate(`/write/${saved.data.id}`, { replace: true })
+      }
 
       const { data, error } = await publishToForum({
         title: postTitle,
@@ -290,7 +304,8 @@ export default function Write() {
         postKind: 'writing',
       })
       if (error) throw error
-      addToast('Published to the forum')
+      const boardName = GENRE_BOARDS.find((b) => b.slug === boardSlug)?.name || boardSlug
+      addToast(`Shared to ${boardName}`)
       setShareOpen(false)
       navigate(`/forum/post/${data.id}`)
     } catch (err) {
@@ -344,7 +359,7 @@ export default function Write() {
               </Button>
               <Button size="sm" onClick={handleShareClick} disabled={aiStatus === 'ai_generated'}>
                 <Share2 className="h-4 w-4" />
-                Share
+                Share to forum
               </Button>
               <Button
                 size="sm"

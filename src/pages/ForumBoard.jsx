@@ -171,9 +171,9 @@ export default function ForumBoard() {
 
             {!isCommunity && (
               <p className="text-sm text-muted-foreground mb-6">
-                Share writing here from the{' '}
+                Writing shared here comes from someone’s private drafts. Open the{' '}
                 <Link to="/write" className="text-primary hover:underline">writing room</Link>
-                {' '}— pick this board when you publish.
+                , save to your account, then choose this forum when you share.
               </p>
             )}
 

@@ -19,25 +19,26 @@ export default function ShareToForumModal({
 }) {
   const [postTitle, setPostTitle] = React.useState(title || 'Untitled')
   const [visibility, setVisibility] = React.useState('accounts_only')
-  const [boardSlug, setBoardSlug] = React.useState(GENRE_BOARDS[0]?.slug || 'fiction')
+  const [boardSlug, setBoardSlug] = React.useState('')
 
   React.useEffect(() => {
     if (open) {
       setPostTitle(title || 'Untitled')
       setVisibility('accounts_only')
-      setBoardSlug(GENRE_BOARDS[0]?.slug || 'fiction')
+      setBoardSlug('')
     }
   }, [open, title])
 
   const blocked = aiStatus === 'ai_generated'
+  const canPublish = Boolean(postTitle.trim() && boardSlug)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Share to forum</DialogTitle>
+          <DialogTitle>Share a saved draft</DialogTitle>
           <DialogDescription>
-            Publish this draft to a genre board. Readers must sign in to comment.
+            Your writing stays in your account. Choose which genre forum to publish it to — there’s no general dump.
           </DialogDescription>
         </DialogHeader>
 
@@ -61,16 +62,22 @@ export default function ShareToForumModal({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="share-board">Genre board</Label>
+              <Label htmlFor="share-board">Share to forum</Label>
               <Select
                 id="share-board"
                 value={boardSlug}
                 onChange={(e) => setBoardSlug(e.target.value)}
               >
+                <option value="" disabled>
+                  Choose a genre forum…
+                </option>
                 {GENRE_BOARDS.map((b) => (
                   <option key={b.slug} value={b.slug}>{b.name}</option>
                 ))}
               </Select>
+              <p className="text-xs text-muted-foreground">
+                Required. The draft is saved to your account first, then posted only to this forum.
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="feedback-vis">Who can see feedback</Label>
@@ -91,7 +98,7 @@ export default function ShareToForumModal({
             )}
             <Button
               className="w-full"
-              disabled={loading || !postTitle.trim() || !boardSlug}
+              disabled={loading || !canPublish}
               onClick={() => onPublish({
                 title: postTitle.trim(),
                 feedbackVisibility: visibility,
@@ -99,7 +106,7 @@ export default function ShareToForumModal({
               })}
             >
               {loading ? <Spinner size="sm" /> : null}
-              {loading ? 'Publishing…' : 'Publish'}
+              {loading ? 'Saving & sharing…' : 'Save & share to forum'}
             </Button>
           </div>
         )}

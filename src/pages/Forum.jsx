@@ -59,8 +59,8 @@ export default function Forum() {
       <main className="flex-1 container mx-auto px-4 py-12 max-w-3xl">
         <h1 className="text-3xl font-bold mb-2">Forum</h1>
         <p className="text-muted-foreground mb-8">
-          Browse by genre to share writing, or join the community boards for advice, promotions, and talk.
-          Comments require a signed-in account.
+          Writing stays in each author’s drafts until they choose a genre forum to share it to.
+          Community boards are for advice, promotions, and talk. Comments require sign-in.
         </p>
 
         {loading ? (

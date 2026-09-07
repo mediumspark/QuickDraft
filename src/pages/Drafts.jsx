@@ -52,7 +52,12 @@ export default function Drafts() {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-12 max-w-3xl">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">My drafts</h1>
+          <div>
+            <h1 className="text-3xl font-bold">My drafts</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Private to your account until you share a piece to a specific forum.
+            </p>
+          </div>
           <Link to="/write">
             <Button>
               <PenLine className="h-4 w-4 mr-1" />

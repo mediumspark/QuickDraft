@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Eye, MessageSquarePlus, Trash2 } from 'lucide-react'
+import { Eye, MessageSquarePlus, Trash2, Bell, BellOff, UserPlus, UserMinus } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import AiBadge from '@/components/AiBadge'
@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/toast'
 import { FEEDBACK_VISIBILITY } from '@/data/writing'
 import {
   getForumPost,
+  getDraft,
   recordPostView,
   listComments,
   createComment,
@@ -23,6 +24,12 @@ import {
   authorLabel,
   canSeeViewCount,
   canUseSelectionComments,
+  isFollowingUser,
+  followUser,
+  unfollowUser,
+  isWatchingProject,
+  watchProject,
+  unwatchProject,
 } from '@/services/supabase'
 import {
   looksLikeHtml,
@@ -82,6 +89,10 @@ export default function ForumPost() {
   const [selectionText, setSelectionText] = React.useState('')
   const [posting, setPosting] = React.useState(false)
   const [activeCommentId, setActiveCommentId] = React.useState(null)
+  const [following, setFollowing] = React.useState(false)
+  const [watching, setWatching] = React.useState(false)
+  const [subBusy, setSubBusy] = React.useState(false)
+  const [pushing, setPushing] = React.useState(false)
   const bodyRef = React.useRef(null)
 
   const isAuthor = user?.id && post?.user_id === user.id
@@ -96,6 +107,26 @@ export default function ForumPost() {
     setComments(data || [])
   }, [id])
 
+  const loadSubscriptionState = React.useCallback(async (postData) => {
+    if (!user || !postData) {
+      setFollowing(false)
+      setWatching(false)
+      return
+    }
+    if (user.id === postData.user_id) {
+      setFollowing(false)
+      const { watching: w } = await isWatchingProject(postData.id)
+      setWatching(!!w)
+      return
+    }
+    const [followState, watchState] = await Promise.all([
+      isFollowingUser(postData.user_id),
+      isWatchingProject(postData.id),
+    ])
+    setFollowing(!!followState.following)
+    setWatching(!!watchState.watching)
+  }, [user])
+
   React.useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -108,6 +139,7 @@ export default function ForumPost() {
       }
       setPost(data)
       setLoading(false)
+      await loadSubscriptionState(data)
 
       if (data.ai_status === 'ai_free' || data.ai_status === 'ai_contributed') {
         const { count } = await recordPostView(data.id)
@@ -119,7 +151,7 @@ export default function ForumPost() {
       await loadComments()
     })()
     return () => { cancelled = true }
-  }, [id, addToast, loadComments])
+  }, [id, addToast, loadComments, loadSubscriptionState])
 
   const handleMouseUp = () => {
     if (!allowSelection || !bodyRef.current) return
@@ -219,6 +251,80 @@ export default function ForumPost() {
     await loadComments()
   }
 
+  const toggleFollow = async () => {
+    if (!user) {
+      setAuthOpen(true)
+      return
+    }
+    if (!post?.user_id || isAuthor) return
+    setSubBusy(true)
+    try {
+      if (following) {
+        const { error } = await unfollowUser(post.user_id)
+        if (error) throw error
+        setFollowing(false)
+        addToast('Unfollowed')
+      } else {
+        const { error } = await followUser(post.user_id)
+        if (error) throw error
+        setFollowing(true)
+        addToast('Following this writer')
+      }
+    } catch (err) {
+      addToast(err.message || 'Could not update follow', 'error')
+    } finally {
+      setSubBusy(false)
+    }
+  }
+
+  const toggleWatch = async () => {
+    if (!user) {
+      setAuthOpen(true)
+      return
+    }
+    setSubBusy(true)
+    try {
+      if (watching) {
+        const { error } = await unwatchProject(id)
+        if (error) throw error
+        setWatching(false)
+        addToast('Stopped watching this project')
+      } else {
+        const { error } = await watchProject(id)
+        if (error) throw error
+        setWatching(true)
+        addToast('Watching — you’ll get updates when this project changes')
+      }
+    } catch (err) {
+      addToast(err.message || 'Could not update watch', 'error')
+    } finally {
+      setSubBusy(false)
+    }
+  }
+
+  const pushDraftUpdate = async () => {
+    if (!post?.draft_id) {
+      addToast('No linked draft to push from', 'error')
+      return
+    }
+    setPushing(true)
+    try {
+      const { data: draft, error: draftError } = await getDraft(post.draft_id)
+      if (draftError || !draft) throw draftError || new Error('Draft not found')
+      const { data, error } = await updateForumPost(id, {
+        title: draft.title || post.title,
+        body: draft.body || '',
+      })
+      if (error) throw error
+      setPost(data)
+      addToast('Shared project updated — watchers notified')
+    } catch (err) {
+      addToast(err.message || 'Could not update shared project', 'error')
+    } finally {
+      setPushing(false)
+    }
+  }
+
   const htmlBody = React.useMemo(() => {
     if (!post?.body || !looksLikeHtml(post.body)) return null
     const { fontsCss, bodyHtml } = extractEmbeddedFonts(post.body || '')
@@ -275,7 +381,9 @@ export default function ForumPost() {
               {post.post_kind !== 'discussion' && <AiBadge status={post.ai_status} />}
             </div>
             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-6">
-              <span>{authorLabel(post.profiles)}</span>
+              <Link to={`/writers/${post.user_id}`} className="hover:text-foreground">
+                {authorLabel(post.profiles)}
+              </Link>
               <span>{new Date(post.created_at).toLocaleString()}</span>
               {showViews && post.post_kind !== 'discussion' && (
                 <span className="inline-flex items-center gap-1">
@@ -398,8 +506,41 @@ export default function ForumPost() {
           </article>
 
           <aside className="space-y-6">
+            <div className="rounded-xl border bg-card p-4 space-y-3">
+              <h3 className="font-semibold">Subscriptions</h3>
+              <p className="text-xs text-muted-foreground">
+                Follow the writer for new shares. Watch this project for updates to this piece.
+              </p>
+              {!isAuthor && (
+                <Button
+                  variant={following ? 'outline' : 'default'}
+                  className="w-full"
+                  disabled={subBusy}
+                  onClick={toggleFollow}
+                >
+                  {following ? <UserMinus className="h-4 w-4 mr-1" /> : <UserPlus className="h-4 w-4 mr-1" />}
+                  {following ? 'Following writer' : 'Follow writer'}
+                </Button>
+              )}
+              <Button
+                variant={watching ? 'outline' : 'secondary'}
+                className="w-full"
+                disabled={subBusy || isAuthor}
+                onClick={toggleWatch}
+                title={isAuthor ? 'Authors don’t watch their own projects' : undefined}
+              >
+                {watching ? <BellOff className="h-4 w-4 mr-1" /> : <Bell className="h-4 w-4 mr-1" />}
+                {watching ? 'Watching project' : 'Watch project'}
+              </Button>
+              {isAuthor && (
+                <p className="text-xs text-muted-foreground">
+                  Others can watch this project. Push draft changes below to notify them.
+                </p>
+              )}
+            </div>
+
             {isAuthor && (
-              <div className="rounded-xl border bg-card p-4 space-y-2">
+              <div className="rounded-xl border bg-card p-4 space-y-3">
                 <Label htmlFor="vis">Who can see feedback</Label>
                 <Select
                   id="vis"
@@ -410,6 +551,12 @@ export default function ForumPost() {
                     <option key={o.id} value={o.id}>{o.label}</option>
                   ))}
                 </Select>
+                {post.draft_id && post.post_kind !== 'discussion' && (
+                  <Button variant="outline" className="w-full" disabled={pushing} onClick={pushDraftUpdate}>
+                    {pushing ? <Spinner size="sm" /> : null}
+                    Push latest draft to watchers
+                  </Button>
+                )}
               </div>
             )}
 
@@ -461,7 +608,7 @@ export default function ForumPost() {
         </div>
       </main>
       <Footer />
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} redirectPath={`/forum/${id}`} isConfigured={isAuthConfigured} />
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} redirectPath={`/forum/post/${id}`} isConfigured={isAuthConfigured} />
     </div>
   )
 }

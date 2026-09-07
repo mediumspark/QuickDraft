@@ -1,11 +1,12 @@
 import * as React from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { User, PenLine, Moon, Sun } from 'lucide-react'
+import { User, PenLine, Moon, Sun, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import AuthModal from '@/components/AuthModal'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { countUnreadNotifications } from '@/services/supabase'
 import { cn } from '@/lib/utils'
 
 const links = [
@@ -20,6 +21,27 @@ export default function Navbar({ transparent = false }) {
   const { resolved, toggleTheme } = useTheme()
   const [authOpen, setAuthOpen] = React.useState(false)
   const [googleLoading, setGoogleLoading] = React.useState(false)
+  const [unread, setUnread] = React.useState(0)
+
+  React.useEffect(() => {
+    let cancelled = false
+    if (!user) {
+      setUnread(0)
+      return undefined
+    }
+    ;(async () => {
+      const { count } = await countUnreadNotifications()
+      if (!cancelled) setUnread(count || 0)
+    })()
+    const timer = setInterval(async () => {
+      const { count } = await countUnreadNotifications()
+      if (!cancelled) setUnread(count || 0)
+    }, 60000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [user])
 
   const handleGoogleSignIn = async () => {
     if (!isAuthConfigured) {
@@ -81,6 +103,25 @@ export default function Navbar({ transparent = false }) {
           >
             {resolved === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
+          {user && (
+            <Link to="/updates" className="relative">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                title="Updates"
+                aria-label="Updates"
+                className={cn(transparent && 'bg-card/40 backdrop-blur-sm')}
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
+              {unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] leading-4 text-center">
+                  {unread > 9 ? '9+' : unread}
+                </span>
+              )}
+            </Link>
+          )}
           {!loading && (
             user ? (
               <Link to="/account">
