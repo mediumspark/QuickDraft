@@ -1,10 +1,14 @@
 import * as React from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Eye, MessageSquarePlus, Trash2, Bell, BellOff, UserPlus, UserMinus } from 'lucide-react'
+import {
+  Eye, MessageSquarePlus, Trash2, Bell, BellOff, UserPlus, UserMinus,
+  ThumbsUp, Gift,
+} from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import AiBadge from '@/components/AiBadge'
 import AuthModal from '@/components/AuthModal'
+import GiveAwardModal, { AwardIconBySlug } from '@/components/GiveAwardModal'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -13,6 +17,8 @@ import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ui/toast'
 import { FEEDBACK_VISIBILITY } from '@/data/writing'
+import { normalizeChapters } from '@/data/chapters'
+import { normalizePageLayout, pageBoxStyle } from '@/data/pageLayout'
 import {
   getForumPost,
   getDraft,
@@ -30,6 +36,9 @@ import {
   isWatchingProject,
   watchProject,
   unwatchProject,
+  getPostUpvoteStats,
+  castUpvote,
+  listPostAwards,
 } from '@/services/supabase'
 import {
   looksLikeHtml,
@@ -93,6 +102,11 @@ export default function ForumPost() {
   const [watching, setWatching] = React.useState(false)
   const [subBusy, setSubBusy] = React.useState(false)
   const [pushing, setPushing] = React.useState(false)
+  const [activeChapter, setActiveChapter] = React.useState(0)
+  const [upvoteStats, setUpvoteStats] = React.useState({ count: 0, totalWeight: 0, mine: false })
+  const [postAwards, setPostAwards] = React.useState([])
+  const [awardOpen, setAwardOpen] = React.useState(false)
+  const [voteBusy, setVoteBusy] = React.useState(false)
   const bodyRef = React.useRef(null)
 
   const isAuthor = user?.id && post?.user_id === user.id
@@ -127,6 +141,20 @@ export default function ForumPost() {
     setWatching(!!watchState.watching)
   }, [user])
 
+  const loadEngagement = React.useCallback(async () => {
+    if (!id) return
+    const [votes, awards] = await Promise.all([
+      getPostUpvoteStats(id),
+      listPostAwards(id),
+    ])
+    setUpvoteStats({
+      count: votes.count || 0,
+      totalWeight: votes.totalWeight || 0,
+      mine: !!votes.mine,
+    })
+    setPostAwards(awards.data || [])
+  }, [id])
+
   React.useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -138,6 +166,7 @@ export default function ForumPost() {
         return
       }
       setPost(data)
+      setActiveChapter(0)
       setLoading(false)
       await loadSubscriptionState(data)
 
@@ -148,10 +177,10 @@ export default function ForumPost() {
         }
       }
 
-      await loadComments()
+      await Promise.all([loadComments(), loadEngagement()])
     })()
     return () => { cancelled = true }
-  }, [id, addToast, loadComments, loadSubscriptionState])
+  }, [id, addToast, loadComments, loadSubscriptionState, loadEngagement])
 
   const handleMouseUp = () => {
     if (!allowSelection || !bodyRef.current) return
@@ -311,12 +340,17 @@ export default function ForumPost() {
     try {
       const { data: draft, error: draftError } = await getDraft(post.draft_id)
       if (draftError || !draft) throw draftError || new Error('Draft not found')
+      const chapters = normalizeChapters(draft.chapters, draft.body || '')
       const { data, error } = await updateForumPost(id, {
         title: draft.title || post.title,
         body: draft.body || '',
+        chapters,
+        page_layout: draft.page_layout || post.page_layout,
+        page_count: draft.page_count || post.page_count,
       })
       if (error) throw error
       setPost(data)
+      setActiveChapter(0)
       addToast('Shared project updated — watchers notified')
     } catch (err) {
       addToast(err.message || 'Could not update shared project', 'error')
@@ -325,12 +359,56 @@ export default function ForumPost() {
     }
   }
 
+  const handleUpvote = async () => {
+    if (!requireAuth()) return
+    if (isAuthor) {
+      addToast('You can’t upvote your own work', 'error')
+      return
+    }
+    if (upvoteStats.mine) {
+      addToast('You already upvoted this')
+      return
+    }
+    setVoteBusy(true)
+    try {
+      const { data, error } = await castUpvote(id)
+      if (error) throw error
+      addToast(
+        data?.author_granted
+          ? `Upvoted (+${data.weight} pts gifted)`
+          : `Upvoted (weight ${data?.weight || 5}; author earns once verified)`
+      )
+      await loadEngagement()
+    } catch (err) {
+      addToast(err.message || 'Could not upvote', 'error')
+    } finally {
+      setVoteBusy(false)
+    }
+  }
+
+  const chapters = React.useMemo(
+    () => normalizeChapters(post?.chapters, post?.body || ''),
+    [post?.chapters, post?.body]
+  )
+  const chapterIndex = Math.min(activeChapter, Math.max(0, chapters.length - 1))
+  const activeCh = chapters[chapterIndex]
+  const pageLayout = normalizePageLayout(post?.page_layout)
+
+  const chapterHtml = React.useMemo(() => {
+    const raw = activeCh?.body || ''
+    if (!raw || !looksLikeHtml(raw)) return null
+    const { fontsCss, bodyHtml } = extractEmbeddedFonts(raw)
+    if (fontsCss) ensureFontsFromCss(fontsCss)
+    return sanitizeHtml(bodyHtml)
+  }, [activeCh?.body])
+
   const htmlBody = React.useMemo(() => {
+    if (chapters.length > 1) return null
     if (!post?.body || !looksLikeHtml(post.body)) return null
     const { fontsCss, bodyHtml } = extractEmbeddedFonts(post.body || '')
     if (fontsCss) ensureFontsFromCss(fontsCss)
     return sanitizeHtml(bodyHtml)
-  }, [post?.body])
+  }, [post?.body, chapters.length])
 
   if (loading) {
     return (
@@ -353,10 +431,14 @@ export default function ForumPost() {
     )
   }
 
+  const displayBody = activeCh?.body || post.body || ''
   const segments = highlightSegments(
-    looksLikeHtml(post.body) ? stripHtml(post.body) : (post.body || ''),
+    looksLikeHtml(displayBody) ? stripHtml(displayBody) : displayBody,
     selectionComments
   )
+  const useChapterMode = post.post_kind !== 'discussion' && chapters.length >= 1
+  const renderedHtml = useChapterMode ? chapterHtml : htmlBody
+  const boxStyle = post.post_kind !== 'discussion' ? pageBoxStyle(pageLayout, 0.72) : undefined
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -380,11 +462,16 @@ export default function ForumPost() {
               <h1 className="text-3xl font-bold">{post.title}</h1>
               {post.post_kind !== 'discussion' && <AiBadge status={post.ai_status} />}
             </div>
-            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-6">
+            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground mb-4">
               <Link to={`/writers/${post.user_id}`} className="hover:text-foreground">
                 {authorLabel(post.profiles)}
               </Link>
               <span>{new Date(post.created_at).toLocaleString()}</span>
+              {post.post_kind !== 'discussion' && (
+                <span>
+                  {post.page_count || 1} page{(post.page_count || 1) === 1 ? '' : 's'}
+                </span>
+              )}
               {showViews && post.post_kind !== 'discussion' && (
                 <span className="inline-flex items-center gap-1">
                   <Eye className="h-4 w-4" />
@@ -394,13 +481,78 @@ export default function ForumPost() {
               )}
             </div>
 
+            {post.post_kind !== 'discussion' && (
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <Button
+                  size="sm"
+                  variant={upvoteStats.mine ? 'secondary' : 'outline'}
+                  disabled={voteBusy || isAuthor}
+                  onClick={handleUpvote}
+                >
+                  {voteBusy ? <Spinner size="sm" /> : <ThumbsUp className="h-4 w-4 mr-1" />}
+                  Upvote
+                  {upvoteStats.count > 0 && (
+                    <span className="ml-1 tabular-nums">({upvoteStats.count} · wt {upvoteStats.totalWeight})</span>
+                  )}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => (requireAuth() ? setAwardOpen(true) : null)}>
+                  <Gift className="h-4 w-4 mr-1" />
+                  Award
+                </Button>
+                {postAwards.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 ml-1">
+                    {postAwards.map((pa) => (
+                      <span
+                        key={pa.id}
+                        className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
+                        title={pa.awards?.name}
+                      >
+                        <AwardIconBySlug icon={pa.awards?.icon} className="h-3 w-3" />
+                        {pa.awards?.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {useChapterMode && chapters.length > 1 && (
+              <nav className="mb-6 rounded-xl border bg-card/50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Contents</p>
+                <ol className="flex flex-wrap gap-2">
+                  {chapters.map((ch, i) => (
+                    <li key={ch.id}>
+                      <button
+                        type="button"
+                        onClick={() => setActiveChapter(i)}
+                        className={cn(
+                          'rounded-md border px-2.5 py-1 text-sm',
+                          i === chapterIndex ? 'border-primary bg-accent' : 'border-border hover:border-primary/40'
+                        )}
+                      >
+                        {ch.title || `Chapter ${i + 1}`}
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            )}
+
+            {useChapterMode && chapters.length > 1 && (
+              <h2 className="text-xl font-semibold mb-3">{activeCh?.title || `Chapter ${chapterIndex + 1}`}</h2>
+            )}
+
             <div
               ref={bodyRef}
               onMouseUp={handleMouseUp}
-              className="qd-prose font-document text-lg leading-relaxed select-text"
+              className={cn(
+                'qd-prose font-document text-lg leading-relaxed select-text',
+                post.post_kind !== 'discussion' && 'mx-auto bg-[color-mix(in_oklab,var(--card)_92%,#f5f0e8)] shadow-md border border-black/10'
+              )}
+              style={boxStyle}
             >
-              {htmlBody ? (
-                <div dangerouslySetInnerHTML={{ __html: htmlBody }} />
+              {renderedHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: renderedHtml }} />
               ) : (
                 <div className="whitespace-pre-wrap">
                   {segments.map((seg, i) =>
@@ -609,6 +761,13 @@ export default function ForumPost() {
       </main>
       <Footer />
       <AuthModal open={authOpen} onOpenChange={setAuthOpen} redirectPath={`/forum/post/${id}`} isConfigured={isAuthConfigured} />
+      <GiveAwardModal
+        open={awardOpen}
+        onOpenChange={setAwardOpen}
+        postId={id}
+        onGiven={loadEngagement}
+        addToast={addToast}
+      />
     </div>
   )
 }

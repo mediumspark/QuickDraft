@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { normalizeChapters, flattenChaptersBody } from '@/data/chapters'
+import { DEFAULT_PAGE_LAYOUT, normalizePageLayout, estimateChaptersPageCount } from '@/data/pageLayout'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -103,13 +105,22 @@ export async function saveDraft(draft) {
   if (!user) return { data: null, error: new Error('Sign in required to save drafts') }
   await ensureCurrentProfile(user)
 
+  const chapters = normalizeChapters(draft.chapters, draft.body || '')
+  const pageLayout = normalizePageLayout(draft.page_layout || DEFAULT_PAGE_LAYOUT)
+  const flatBody = flattenChaptersBody(chapters)
+  const pageCount = draft.page_count
+    ?? estimateChaptersPageCount(chapters, pageLayout)
+
   const payload = {
     title: draft.title || 'Untitled',
-    body: draft.body || '',
+    body: flatBody || draft.body || '',
+    chapters,
+    page_layout: pageLayout,
+    page_count: Math.max(1, Number(pageCount) || 1),
     prompt: draft.prompt || '',
     word_goal: draft.word_goal ?? null,
     timer_seconds: draft.timer_seconds ?? 1500,
-    word_count: countWords(draft.body),
+    word_count: countWords(flatBody || draft.body),
     ai_status: draft.ai_status || 'ai_free',
     user_id: user.id,
     updated_at: new Date().toISOString(),
@@ -234,6 +245,9 @@ export async function getForumPost(id) {
 export async function publishToForum({
   title,
   body,
+  chapters: chaptersIn,
+  pageLayout,
+  pageCount,
   draftId,
   aiStatus,
   feedbackVisibility,
@@ -270,6 +284,11 @@ export async function publishToForum({
     return { data: null, error: new Error('Choose a forum board') }
   }
 
+  const chapters = normalizeChapters(chaptersIn, body || '')
+  const layout = normalizePageLayout(pageLayout || DEFAULT_PAGE_LAYOUT)
+  const flatBody = flattenChaptersBody(chapters) || body || ''
+  const pages = Math.max(1, Number(pageCount) || estimateChaptersPageCount(chapters, layout))
+
   const { data, error } = await supabase
     .from('forum_posts')
     .insert({
@@ -278,7 +297,10 @@ export async function publishToForum({
       board_id: resolvedBoardId,
       post_kind: postKind,
       title: title || 'Untitled',
-      body: body || '',
+      body: flatBody,
+      chapters,
+      page_layout: layout,
+      page_count: pages,
       status: 'published',
       ai_status: postKind === 'discussion' ? 'ai_free' : aiStatus,
       feedback_visibility: feedbackVisibility || 'accounts_only',
@@ -288,6 +310,10 @@ export async function publishToForum({
 
   if (!error && data) {
     void notifyFollowersOfNewPost(data)
+    if (postKind === 'writing') {
+      void supabase.rpc('grant_publish_points', { p_post_id: data.id })
+      void supabase.rpc('refresh_verified_writer', { p_user_id: user.id })
+    }
   }
   return { data, error }
 }
@@ -312,7 +338,7 @@ export async function updateForumPost(id, patch) {
     .select('*, forum_boards!board_id(slug, name, kind), profiles!user_id(display_name, email)')
     .single()
 
-  const contentChanged = patch && ('body' in patch || 'title' in patch)
+  const contentChanged = patch && ('body' in patch || 'title' in patch || 'chapters' in patch)
   if (!error && data && contentChanged) {
     void notifyWatchersOfPostUpdate(data)
   }
@@ -364,6 +390,22 @@ export async function createComment({ postId, body, anchorType, startOffset, end
     .insert(payload)
     .select('*, profiles!user_id(display_name, email)')
     .single()
+
+  if (!error && data && anchorType === 'general') {
+    void supabase.rpc('grant_critique_points', {
+      p_post_id: postId,
+      p_comment_id: data.id,
+    })
+    // Author verification may unlock from this critique
+    const { data: post } = await supabase
+      .from('forum_posts')
+      .select('user_id')
+      .eq('id', postId)
+      .maybeSingle()
+    if (post?.user_id) {
+      void supabase.rpc('refresh_verified_writer', { p_user_id: post.user_id })
+    }
+  }
   return { data, error }
 }
 
@@ -423,14 +465,125 @@ export async function setPromptOfTheDay(body) {
 
 // ---- Follows, watches, notifications ----
 
+const PUBLIC_PROFILE_FIELDS =
+  'id, email, display_name, created_at, points_earned, is_verified_writer, avatar_url, bio, interests, is_admin'
+
 export async function getProfile(userId) {
   if (!supabase) return { data: null, error: null, offline: true }
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, display_name, created_at')
+    .select(PUBLIC_PROFILE_FIELDS)
     .eq('id', userId)
     .maybeSingle()
   return { data, error }
+}
+
+export async function getMyWallet() {
+  if (!supabase) return { data: null, error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required') }
+  const { data, error } = await supabase
+    .from('profile_wallets')
+    .select('points_balance, updated_at')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  return { data: data || { points_balance: 5 }, error }
+}
+
+export async function updateMyProfile(patch) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required') }
+
+  const payload = {}
+  if (typeof patch.display_name === 'string') payload.display_name = patch.display_name.trim().slice(0, 80)
+  if (typeof patch.bio === 'string') payload.bio = patch.bio.trim().slice(0, 300)
+  if (Array.isArray(patch.interests)) {
+    payload.interests = patch.interests.filter((s) => typeof s === 'string').slice(0, 20)
+  }
+  if (typeof patch.avatar_url === 'string' || patch.avatar_url === null) {
+    payload.avatar_url = patch.avatar_url
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(payload)
+    .eq('id', user.id)
+    .select(PUBLIC_PROFILE_FIELDS)
+    .single()
+  return { data, error }
+}
+
+export async function uploadAvatar(file) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required') }
+  if (!file) return { data: null, error: new Error('No file selected') }
+
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const path = `${user.id}/avatar.${ext || 'jpg'}`
+  const { error: upErr } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' })
+  if (upErr) return { data: null, error: upErr }
+
+  const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
+  const avatarUrl = `${pub.publicUrl}?t=${Date.now()}`
+  return updateMyProfile({ avatar_url: avatarUrl })
+}
+
+export async function getVerificationProgress(userId) {
+  if (!supabase || !userId) {
+    return {
+      data: { has_writing: false, has_upvote: false, has_critique: false, is_verified_writer: false },
+      error: null,
+      offline: !supabase,
+    }
+  }
+
+  const [{ data: posts }, profile] = await Promise.all([
+    supabase
+      .from('forum_posts')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'published')
+      .eq('post_kind', 'writing'),
+    getProfile(userId),
+  ])
+
+  const writingIds = (posts || []).map((p) => p.id)
+  let hasUpvote = false
+  let hasCritique = false
+
+  if (writingIds.length) {
+    const [upvotes, critiques] = await Promise.all([
+      supabase
+        .from('post_upvotes')
+        .select('post_id')
+        .in('post_id', writingIds)
+        .limit(1),
+      supabase
+        .from('forum_comments')
+        .select('id, user_id')
+        .in('post_id', writingIds)
+        .eq('anchor_type', 'general')
+        .neq('user_id', userId)
+        .limit(1),
+    ])
+    hasUpvote = (upvotes.data || []).length > 0
+    hasCritique = (critiques.data || []).length > 0
+  }
+
+  return {
+    data: {
+      has_writing: writingIds.length > 0,
+      has_upvote: hasUpvote,
+      has_critique: hasCritique,
+      is_verified_writer: !!profile.data?.is_verified_writer,
+      points_earned: profile.data?.points_earned ?? 5,
+    },
+    error: profile.error,
+  }
 }
 
 export async function listWriterPosts(userId) {
@@ -618,7 +771,7 @@ export async function searchSite(query, { limit = 20 } = {}) {
   const [usersRes, worksRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, display_name, email, created_at')
+      .select('id, display_name, email, created_at, avatar_url, points_earned, is_verified_writer')
       .or(`display_name.ilike.${pattern},email.ilike.${pattern}`)
       .order('display_name', { ascending: true })
       .limit(limit),
@@ -684,3 +837,110 @@ export async function listWatchedProjects() {
     error,
   }
 }
+
+// ---- Upvotes & awards ----
+
+export async function getPostUpvoteStats(postId) {
+  if (!supabase) return { count: 0, totalWeight: 0, mine: false, offline: true }
+  const user = await getCurrentUser()
+  const { data, error } = await supabase
+    .from('post_upvotes')
+    .select('user_id, weight')
+    .eq('post_id', postId)
+  const rows = data || []
+  return {
+    count: rows.length,
+    totalWeight: rows.reduce((s, r) => s + (r.weight || 0), 0),
+    mine: !!(user && rows.some((r) => r.user_id === user.id)),
+    error,
+  }
+}
+
+export async function castUpvote(postId) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const { data, error } = await supabase.rpc('cast_upvote', { p_post_id: postId })
+  return { data, error }
+}
+
+export async function removeUpvote(postId) {
+  if (!supabase) return { error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { error: new Error('Sign in required') }
+  const { error } = await supabase
+    .from('post_upvotes')
+    .delete()
+    .eq('post_id', postId)
+    .eq('user_id', user.id)
+  return { error }
+}
+
+export async function listAwards() {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const { data, error } = await supabase
+    .from('awards')
+    .select('*')
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+  return { data: data || [], error }
+}
+
+export async function listMyAwardInventory() {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const user = await getCurrentUser()
+  if (!user) return { data: [], error: new Error('Sign in required') }
+  const { data, error } = await supabase
+    .from('award_inventory')
+    .select('quantity, award_id, awards(*)')
+    .eq('user_id', user.id)
+    .gt('quantity', 0)
+  return { data: data || [], error }
+}
+
+export async function listPostAwards(postId) {
+  if (!supabase) return { data: [], error: null, offline: true }
+  const { data, error } = await supabase
+    .from('post_awards')
+    .select('id, created_at, award_id, giver_id, awards(*), profiles!giver_id(display_name, email)')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: false })
+  return { data: data || [], error }
+}
+
+export async function spendPointsForAward(awardId, quantity = 1) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const { data, error } = await supabase.rpc('spend_points_for_award', {
+    p_award_id: awardId,
+    p_quantity: quantity,
+  })
+  return { data, error }
+}
+
+export async function giveAward(postId, awardId) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const { data, error } = await supabase.rpc('give_award', {
+    p_post_id: postId,
+    p_award_id: awardId,
+  })
+  return { data, error }
+}
+
+export async function createAwardCheckout({ awardId, quantity = 1 }) {
+  if (!supabase) return { data: null, error: new Error('Backend not configured') }
+  const user = await getCurrentUser()
+  if (!user) return { data: null, error: new Error('Sign in required') }
+  const { data: { session } } = await supabase.auth.getSession()
+  const res = await fetch('/api/create-award-checkout', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session?.access_token || ''}`,
+    },
+    body: JSON.stringify({ awardId, quantity }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { data: null, error: new Error(json.error || 'Checkout failed') }
+  }
+  return { data: json, error: null }
+}
+

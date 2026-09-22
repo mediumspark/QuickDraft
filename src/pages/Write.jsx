@@ -13,12 +13,15 @@ import AuthModal from '@/components/AuthModal'
 import ShareToForumModal from '@/components/ShareToForumModal'
 import AiBadge from '@/components/AiBadge'
 import RichTextEditor from '@/components/RichTextEditor'
+import { ChapterSidebar, PageLayoutControls } from '@/components/ChapterTools'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   AI_STATUS, WRITING_PROMPTS, TIMER_PRESETS, formatTime,
 } from '@/data/writing'
 import { GENRE_BOARDS } from '@/data/forumBoards'
+import { normalizeChapters, createChapter, reorderChapters } from '@/data/chapters'
+import { DEFAULT_PAGE_LAYOUT, normalizePageLayout, estimateChaptersPageCount } from '@/data/pageLayout'
 import {
   countWords, getDraft, saveDraft, publishToForum, isSupabaseConfigured,
 } from '@/services/supabase'
@@ -69,7 +72,9 @@ export default function Write() {
   const { addToast } = useToast()
 
   const [title, setTitle] = React.useState('Untitled')
-  const [body, setBody] = React.useState('')
+  const [chapters, setChapters] = React.useState(() => normalizeChapters(null, ''))
+  const [activeChapter, setActiveChapter] = React.useState(0)
+  const [pageLayout, setPageLayout] = React.useState(DEFAULT_PAGE_LAYOUT)
   const [prompt, setPrompt] = React.useState('')
   const [aiStatus, setAiStatus] = React.useState('ai_free')
   const [wordGoal, setWordGoal] = React.useState('')
@@ -89,8 +94,22 @@ export default function Write() {
   const [sessionOpen, setSessionOpen] = React.useState(false)
   const rootRef = React.useRef(null)
 
-  const wordCount = countWords(body)
+  const safeIndex = Math.min(activeChapter, Math.max(0, chapters.length - 1))
+  const currentChapter = chapters[safeIndex] || chapters[0]
+  const body = currentChapter?.body || ''
+  const allBody = chapters.map((c) => c.body || '').join('\n')
+  const wordCount = countWords(allBody)
+  const pageCount = estimateChaptersPageCount(chapters, pageLayout)
   const goalNum = wordGoal ? Number(wordGoal) : null
+
+  const setChapterBody = (html) => {
+    setChapters((prev) => {
+      const next = normalizeChapters(prev)
+      const idx = Math.min(activeChapter, next.length - 1)
+      next[idx] = { ...next[idx], body: html }
+      return next
+    })
+  }
 
   React.useEffect(() => {
     let cancelled = false
@@ -106,13 +125,16 @@ export default function Write() {
         }
         setDraftId(data.id)
         setTitle(data.title || 'Untitled')
-        setBody(data.body || '')
+        const ch = normalizeChapters(data.chapters, data.body || '')
+        setChapters(ch)
+        setActiveChapter(0)
+        setPageLayout(normalizePageLayout(data.page_layout || DEFAULT_PAGE_LAYOUT))
         setPrompt(data.prompt || '')
         setAiStatus(data.ai_status || 'ai_free')
         setWordGoal(data.word_goal ? String(data.word_goal) : '')
         setTimerSeconds(data.timer_seconds || 1500)
         setRemaining(data.timer_seconds || 1500)
-        setEditorKey(`cloud-${data.id}-${data.updated_at || Date.now()}`)
+        setEditorKey(`cloud-${data.id}-0-${data.updated_at || Date.now()}`)
         setLoading(false)
         return
       }
@@ -121,14 +143,17 @@ export default function Write() {
         const local = loadLocal()
         if (local) {
           setTitle(local.title || 'Untitled')
-          setBody(local.body || '')
+          const ch = normalizeChapters(local.chapters, local.body || '')
+          setChapters(ch)
+          setActiveChapter(local.activeChapter || 0)
+          setPageLayout(normalizePageLayout(local.pageLayout || DEFAULT_PAGE_LAYOUT))
           setPrompt(local.prompt || '')
           setAiStatus(local.aiStatus || 'ai_free')
           setWordGoal(local.wordGoal || '')
           setTimerSeconds(local.timerSeconds || 1500)
           setRemaining(local.timerSeconds || 1500)
           setDraftId(local.id || null)
-          setEditorKey(`local-${local.id || 'new'}`)
+          setEditorKey(`local-${local.id || 'new'}-0`)
         } else {
           setEditorKey('local-empty')
         }
@@ -143,14 +168,17 @@ export default function Write() {
     const snapshot = {
       id: draftId,
       title,
-      body,
+      chapters,
+      activeChapter: safeIndex,
+      pageLayout,
+      body: allBody,
       prompt,
       aiStatus,
       wordGoal,
       timerSeconds,
     }
     saveLocal(snapshot)
-  }, [draftId, title, body, prompt, aiStatus, wordGoal, timerSeconds])
+  }, [draftId, title, chapters, safeIndex, pageLayout, allBody, prompt, aiStatus, wordGoal, timerSeconds])
 
   React.useEffect(() => {
     if (!running) return undefined
@@ -175,7 +203,9 @@ export default function Write() {
       const { data } = await saveDraft({
         id: draftId,
         title,
-        body,
+        chapters,
+        page_layout: pageLayout,
+        page_count: pageCount,
         prompt,
         ai_status: aiStatus,
         word_goal: goalNum || null,
@@ -187,7 +217,7 @@ export default function Write() {
       }
     }, 2000)
     return () => clearTimeout(handle)
-  }, [user, draftId, title, body, prompt, aiStatus, goalNum, timerSeconds, id, navigate])
+  }, [user, draftId, title, chapters, pageLayout, pageCount, prompt, aiStatus, goalNum, timerSeconds, id, navigate])
 
   React.useEffect(() => {
     const syncFullscreen = () => {
@@ -207,7 +237,6 @@ export default function Write() {
 
   React.useEffect(() => {
     const onKey = (e) => {
-      // Browser owns Esc while fullscreen (exits F11-style mode).
       if (e.key === 'Escape' && !getFullscreenElement()) {
         setChromeVisible((v) => !v)
       }
@@ -228,6 +257,18 @@ export default function Write() {
     }
   }
 
+  const draftPayload = () => ({
+    id: draftId,
+    title,
+    chapters,
+    page_layout: pageLayout,
+    page_count: pageCount,
+    prompt,
+    ai_status: aiStatus,
+    word_goal: goalNum || null,
+    timer_seconds: timerSeconds,
+  })
+
   const handleSave = async () => {
     if (!user) {
       setAuthOpen(true)
@@ -235,15 +276,7 @@ export default function Write() {
     }
     setSaving(true)
     try {
-      const { data, error } = await saveDraft({
-        id: draftId,
-        title,
-        body,
-        prompt,
-        ai_status: aiStatus,
-        word_goal: goalNum || null,
-        timer_seconds: timerSeconds,
-      })
+      const { data, error } = await saveDraft(draftPayload())
       if (error) throw error
       if (data?.id) {
         setDraftId(data.id)
@@ -278,15 +311,7 @@ export default function Write() {
     setPublishing(true)
     try {
       let ensureId = draftId
-      const saved = await saveDraft({
-        id: draftId,
-        title: postTitle,
-        body,
-        prompt,
-        ai_status: aiStatus,
-        word_goal: goalNum || null,
-        timer_seconds: timerSeconds,
-      })
+      const saved = await saveDraft({ ...draftPayload(), title: postTitle })
       if (saved.error) throw saved.error
       ensureId = saved.data?.id || draftId
       if (saved.data?.id) {
@@ -296,7 +321,9 @@ export default function Write() {
 
       const { data, error } = await publishToForum({
         title: postTitle,
-        body,
+        chapters,
+        pageLayout,
+        pageCount,
         draftId: ensureId,
         aiStatus,
         feedbackVisibility,
@@ -305,7 +332,7 @@ export default function Write() {
       })
       if (error) throw error
       const boardName = GENRE_BOARDS.find((b) => b.slug === boardSlug)?.name || boardSlug
-      addToast(`Shared to ${boardName}`)
+      addToast(`Shared to ${boardName} · ${pageCount} page${pageCount === 1 ? '' : 's'}`)
       setShareOpen(false)
       navigate(`/forum/post/${data.id}`)
     } catch (err) {
@@ -318,6 +345,11 @@ export default function Write() {
   const pickPrompt = () => {
     const next = WRITING_PROMPTS[Math.floor(Math.random() * WRITING_PROMPTS.length)]
     setPrompt(next)
+  }
+
+  const selectChapter = (i) => {
+    setActiveChapter(i)
+    setEditorKey(`ch-${chapters[i]?.id || i}-${Date.now()}`)
   }
 
   if (loading) {
@@ -376,7 +408,8 @@ export default function Write() {
             </div>
           </div>
 
-          <div className="container mx-auto px-4 pb-3">
+          <div className="container mx-auto px-4 pb-3 space-y-3">
+            <PageLayoutControls layout={pageLayout} pageCount={pageCount} onChange={setPageLayout} />
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
                 type="button"
@@ -405,7 +438,7 @@ export default function Write() {
               </div>
             </div>
             {sessionOpen && (
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-1 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-1">
                   <Label className="text-xs">Timer preset</Label>
                   <Select
@@ -501,24 +534,72 @@ export default function Write() {
         </div>
       )}
 
-      <div className="flex-1 container mx-auto px-4 py-8 max-w-5xl flex flex-col">
+      <div className="flex-1 container mx-auto px-4 py-8 max-w-6xl flex flex-col gap-4">
         {prompt && (
-          <p className="text-sm italic text-muted-foreground mb-4 font-document border-l-2 border-primary/30 pl-3">
+          <p className="text-sm italic text-muted-foreground font-document border-l-2 border-primary/30 pl-3">
             {prompt}
           </p>
         )}
-        <RichTextEditor
-          contentKey={editorKey}
-          value={body}
-          onChange={setBody}
-          placeholder="Start writing…"
-          className="flex-1"
-          minHeightClass="min-h-[55vh]"
-        />
-        <div className="flex justify-between text-xs text-muted-foreground pt-4 border-t mt-4">
+        <div className="flex flex-col sm:flex-row gap-6 flex-1">
+          <ChapterSidebar
+            chapters={chapters}
+            activeIndex={safeIndex}
+            onSelect={selectChapter}
+            onChangeTitle={(i, t) => {
+              setChapters((prev) => {
+                const next = normalizeChapters(prev)
+                next[i] = { ...next[i], title: t }
+                return next
+              })
+            }}
+            onAdd={() => {
+              setChapters((prev) => {
+                const next = normalizeChapters(prev)
+                next.push(createChapter(`Chapter ${next.length + 1}`, '', next.length))
+                return next
+              })
+              const nextIdx = chapters.length
+              setActiveChapter(nextIdx)
+              setEditorKey(`ch-new-${Date.now()}`)
+            }}
+            onRemove={(i) => {
+              setChapters((prev) => {
+                const next = normalizeChapters(prev)
+                if (next.length <= 1) return next
+                next.splice(i, 1)
+                return next.map((c, idx) => ({ ...c, sort_order: idx }))
+              })
+              setActiveChapter((a) => Math.max(0, Math.min(a, chapters.length - 2)))
+              setEditorKey(`ch-rm-${Date.now()}`)
+            }}
+            onMove={(from, to) => {
+              setChapters((prev) => reorderChapters(prev, from, to))
+              setActiveChapter(to)
+              setEditorKey(`ch-mv-${Date.now()}`)
+            }}
+          />
+          <div className="flex-1 min-w-0 flex flex-col">
+            <p className="text-xs text-muted-foreground mb-2">
+              Editing: {currentChapter?.title || `Chapter ${safeIndex + 1}`}
+            </p>
+            <RichTextEditor
+              contentKey={editorKey}
+              value={body}
+              onChange={setChapterBody}
+              placeholder="Start writing this chapter…"
+              className="flex-1"
+              minHeightClass="min-h-[55vh]"
+            />
+          </div>
+        </div>
+        <div className="flex justify-between text-xs text-muted-foreground pt-4 border-t">
           <span>
             {wordCount} word{wordCount === 1 ? '' : 's'}
             {goalNum ? ` / ${goalNum} goal` : ''}
+            {' · '}
+            {pageCount} page{pageCount === 1 ? '' : 's'}
+            {' · '}
+            {chapters.length} chapter{chapters.length === 1 ? '' : 's'}
           </span>
           <span>
             {isFullscreen

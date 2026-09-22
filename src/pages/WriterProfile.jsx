@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { UserPlus, UserMinus } from 'lucide-react'
+import { UserPlus, UserMinus, BadgeCheck } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import AiBadge from '@/components/AiBadge'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ui/toast'
+import { GENRE_BOARDS } from '@/data/forumBoards'
 import {
   getProfile,
   listWriterPosts,
@@ -76,6 +77,10 @@ export default function WriterProfile() {
     }
   }
 
+  const interestLabels = (profile?.interests || [])
+    .map((slug) => GENRE_BOARDS.find((b) => b.slug === slug)?.name || slug)
+    .filter(Boolean)
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -87,11 +92,42 @@ export default function WriterProfile() {
         ) : (
           <>
             <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-bold">{authorLabel(profile)}</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Shared work from this account. Follow to hear about new posts.
-                </p>
+              <div className="flex gap-4 min-w-0">
+                <div className="h-20 w-20 shrink-0 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-semibold text-muted-foreground">
+                      {authorLabel(profile).slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-3xl font-bold">{authorLabel(profile)}</h1>
+                    {profile.is_verified_writer && (
+                      <span className="inline-flex items-center gap-1 text-sm text-primary font-medium">
+                        <BadgeCheck className="h-4 w-4" />
+                        Verified
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {profile.points_earned ?? 5} points earned
+                  </p>
+                  {profile.bio && (
+                    <p className="text-sm mt-3 max-w-prose whitespace-pre-wrap">{profile.bio}</p>
+                  )}
+                  {interestLabels.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {interestLabels.map((label) => (
+                        <span key={label} className="rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               {!isSelf && (
                 <Button variant={following ? 'outline' : 'default'} onClick={toggleFollow} disabled={followBusy}>
