@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
 import {
   TextStyle,
   Color,
@@ -342,15 +343,21 @@ function RichTextEditorInner({
   }, [seed])
 
   const pushChange = React.useCallback((ed) => {
-    if (!onChange || !ed) return
-    const fontsCss = buildFontFaceCss(customFontsRef.current)
-    const inner = ed.getHTML()
-    const laid = applyLayout(inner, layoutRef.current)
-    onChange(embedFonts(laid, fontsCss))
+    if (!onChange || !ed || ed.isDestroyed) return
+    // TipTap/ProseMirror can briefly lack a view during recreate — avoid getHTML crash
+    if (!ed.view || !ed.schema) return
+    try {
+      const fontsCss = buildFontFaceCss(customFontsRef.current)
+      const inner = ed.getHTML()
+      const laid = applyLayout(inner, layoutRef.current)
+      onChange(embedFonts(laid, fontsCss))
+    } catch (err) {
+      console.warn('RichTextEditor pushChange skipped:', err)
+    }
   }, [onChange])
 
   const editor = useEditor({
-    immediatelyRender: true,
+    immediatelyRender: false,
     shouldRerenderOnTransaction: true,
     extensions: [
       StarterKit.configure({
@@ -361,6 +368,7 @@ function RichTextEditorInner({
         horizontalRule: false,
         link: false,
       }),
+      Underline,
       TextStyle,
       Color,
       FontFamily,
@@ -378,12 +386,16 @@ function RichTextEditorInner({
       },
     },
     onCreate: () => setInitError(''),
-    onUpdate: ({ editor: ed }) => pushChange(ed),
+    onUpdate: ({ editor: ed }) => {
+      if (ed?.isDestroyed) return
+      pushChange(ed)
+    },
   }, [contentKey])
 
   React.useEffect(() => {
     layoutRef.current = { columns, doubleSpace }
-    if (editor) pushChange(editor)
+    if (!editor || editor.isDestroyed) return
+    pushChange(editor)
   }, [columns, doubleSpace, editor, pushChange])
 
   React.useEffect(() => {

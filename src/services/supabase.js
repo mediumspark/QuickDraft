@@ -42,14 +42,26 @@ async function ensureCurrentProfile(user) {
     || user.user_metadata?.name
     || user.email?.split('@')[0]
     || 'Writer'
-  await supabase.from('profiles').upsert(
-    {
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (existing) {
+    await supabase
+      .from('profiles')
+      .update({
+        email: user.email,
+        display_name: existing.display_name || displayName,
+      })
+      .eq('id', user.id)
+  } else {
+    await supabase.from('profiles').insert({
       id: user.id,
       email: user.email,
       display_name: displayName,
-    },
-    { onConflict: 'id' }
-  )
+    })
+  }
 }
 
 const VIEWER_KEY = 'aqd_viewer_key'
@@ -467,15 +479,37 @@ export async function setPromptOfTheDay(body) {
 
 const PUBLIC_PROFILE_FIELDS =
   'id, email, display_name, created_at, points_earned, is_verified_writer, avatar_url, bio, interests, is_admin'
+const PUBLIC_PROFILE_FIELDS_BASIC = 'id, email, display_name, created_at'
 
 export async function getProfile(userId) {
   if (!supabase) return { data: null, error: null, offline: true }
-  const { data, error } = await supabase
+  const full = await supabase
     .from('profiles')
     .select(PUBLIC_PROFILE_FIELDS)
     .eq('id', userId)
     .maybeSingle()
-  return { data, error }
+  if (!full.error) return { data: full.data, error: null }
+
+  // Schema not fully applied yet — fall back to core columns
+  const basic = await supabase
+    .from('profiles')
+    .select(PUBLIC_PROFILE_FIELDS_BASIC)
+    .eq('id', userId)
+    .maybeSingle()
+  return {
+    data: basic.data
+      ? {
+          ...basic.data,
+          points_earned: 5,
+          is_verified_writer: false,
+          avatar_url: null,
+          bio: null,
+          interests: [],
+          is_admin: false,
+        }
+      : null,
+    error: basic.error || full.error,
+  }
 }
 
 export async function getMyWallet() {

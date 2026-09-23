@@ -11,28 +11,59 @@ async function ensureProfile(user) {
     || user.user_metadata?.name
     || user.email?.split('@')[0]
     || 'Writer'
-  await supabase.from('profiles').upsert(
-    {
+
+  // Prefer update-then-insert so missing optional columns / triggers don't break sign-in
+  const { data: existing, error: readErr } = await supabase
+    .from('profiles')
+    .select('id, email, display_name')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (!existing && !readErr) {
+    const { error: insertErr } = await supabase.from('profiles').insert({
       id: user.id,
       email: user.email,
       display_name: displayName,
-    },
-    { onConflict: 'id' }
-  )
-  const { data, error } = await supabase
+    })
+    if (insertErr) {
+      console.warn('profile insert failed', insertErr)
+      // Fall through — row may already exist from trigger
+    }
+  } else if (existing) {
+    const { error: updateErr } = await supabase
+      .from('profiles')
+      .update({
+        email: user.email,
+        display_name: existing.display_name || displayName,
+      })
+      .eq('id', user.id)
+    if (updateErr) console.warn('profile update failed', updateErr)
+  } else if (readErr) {
+    console.warn('profile read failed', readErr)
+    // Last resort upsert with minimal fields
+    const { error: upsertErr } = await supabase.from('profiles').upsert(
+      { id: user.id, email: user.email, display_name: displayName },
+      { onConflict: 'id' }
+    )
+    if (upsertErr) console.warn('profile upsert failed', upsertErr)
+  }
+
+  // Load admin flag if column exists; never block auth on schema drift
+  const withAdmin = await supabase
     .from('profiles')
     .select('id, email, display_name, is_admin')
     .eq('id', user.id)
     .maybeSingle()
-  if (error) {
-    const fallback = await supabase
-      .from('profiles')
-      .select('id, email, display_name')
-      .eq('id', user.id)
-      .maybeSingle()
-    return fallback.data ? { ...fallback.data, is_admin: false } : null
-  }
-  return data
+
+  if (!withAdmin.error && withAdmin.data) return withAdmin.data
+
+  const basic = await supabase
+    .from('profiles')
+    .select('id, email, display_name')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  return basic.data ? { ...basic.data, is_admin: false } : null
 }
 
 export function AuthProvider({ children }) {
