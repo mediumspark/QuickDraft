@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { PaginatedPageSurface } from '@/components/PaginatedPageSurface'
 import {
   plainTextToHtml,
   parseLayout,
@@ -324,6 +325,8 @@ function RichTextEditorInner({
   placeholder = 'Start writing…',
   className,
   minHeightClass = 'min-h-[55vh]',
+  pageLayout = null,
+  onMeasuredPageCount,
 }) {
   const fileRef = React.useRef(null)
   const customFontsRef = React.useRef([])
@@ -333,6 +336,7 @@ function RichTextEditorInner({
   const [initError, setInitError] = React.useState('')
   const layoutRef = React.useRef({ columns: 1, doubleSpace: false })
   const { addToast } = useToast()
+  const paginated = !!pageLayout
 
   const seed = React.useMemo(() => prepareIncoming(value), [contentKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -380,8 +384,9 @@ function RichTextEditorInner({
     editorProps: {
       attributes: {
         class: cn(
-          'qd-editor ProseMirror outline-none max-w-none font-document text-lg px-1',
-          minHeightClass
+          'qd-editor ProseMirror outline-none max-w-none font-document',
+          paginated ? 'text-[length:inherit] px-0' : 'text-lg px-1',
+          !paginated && minHeightClass
         ),
       },
     },
@@ -429,6 +434,16 @@ function RichTextEditorInner({
     }
   }
 
+  const editorBody = editor ? (
+    <EditorContent editor={editor} />
+  ) : (
+    <div className={cn('animate-pulse rounded-md bg-muted/40', minHeightClass)}>
+      {initError && (
+        <p className="p-4 text-sm text-destructive">{initError}</p>
+      )}
+    </div>
+  )
+
   return (
     <div className={cn('flex flex-col rounded-lg border bg-card overflow-hidden', className)}>
       <FormatToolbar
@@ -443,20 +458,30 @@ function RichTextEditorInner({
         onUploadFont={onUploadFont}
       />
 
-      <div
-        className={cn('qd-editor-shell px-3 py-4', doubleSpace && 'qd-double-space')}
-        style={columns > 1 ? { columnCount: columns, columnGap: '1.75rem' } : undefined}
-      >
-        {editor ? (
-          <EditorContent editor={editor} />
-        ) : (
-          <div className={cn('animate-pulse rounded-md bg-muted/40', minHeightClass)}>
-            {initError && (
-              <p className="p-4 text-sm text-destructive">{initError}</p>
-            )}
-          </div>
-        )}
-      </div>
+      {paginated ? (
+        <div className={cn(doubleSpace && 'qd-double-space')}>
+          <PaginatedPageSurface
+            layout={pageLayout}
+            scale={0.82}
+            onPageCount={onMeasuredPageCount}
+            deskClassName="rounded-none border-0 border-t"
+          >
+            <div
+              className="qd-editor-shell"
+              style={columns > 1 ? { columnCount: columns, columnGap: '1.75rem' } : undefined}
+            >
+              {editorBody}
+            </div>
+          </PaginatedPageSurface>
+        </div>
+      ) : (
+        <div
+          className={cn('qd-editor-shell px-3 py-4', doubleSpace && 'qd-double-space')}
+          style={columns > 1 ? { columnCount: columns, columnGap: '1.75rem' } : undefined}
+        >
+          {editorBody}
+        </div>
+      )}
     </div>
   )
 }
