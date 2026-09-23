@@ -178,25 +178,6 @@ body {
   min-height: inherit;
 }
 
-.qd-page-desk {
-  background: var(--qd-desk, color-mix(in oklab, var(--background) 88%, var(--muted) 12%));
-}
-
-.qd-page-content .tiptap,
-.qd-page-content .ProseMirror {
-  min-height: 12rem;
-  outline: none;
-}
-
-.qd-page-content .ProseMirror p {
-  margin: 0 0 0.85em;
-  line-height: 1.7;
-}
-
-.dark .qd-page-sheet {
-  --qd-paper: color-mix(in oklab, var(--card) 92%, #e8e4dc 8%);
-}
-
 .qd-editor p {
   margin: 0 0 0.85em;
   line-height: 1.7;

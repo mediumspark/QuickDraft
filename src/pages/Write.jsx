@@ -75,7 +75,6 @@ export default function Write() {
   const [chapters, setChapters] = React.useState(() => normalizeChapters(null, ''))
   const [activeChapter, setActiveChapter] = React.useState(0)
   const [pageLayout, setPageLayout] = React.useState(DEFAULT_PAGE_LAYOUT)
-  const [measuredPages, setMeasuredPages] = React.useState(null)
   const [prompt, setPrompt] = React.useState('')
   const [aiStatus, setAiStatus] = React.useState('ai_free')
   const [wordGoal, setWordGoal] = React.useState('')
@@ -100,8 +99,7 @@ export default function Write() {
   const body = currentChapter?.body || ''
   const allBody = chapters.map((c) => c.body || '').join('\n')
   const wordCount = countWords(allBody)
-  const pageCount = measuredPages
-    ?? estimateChaptersPageCount(chapters, pageLayout)
+  const pageCount = estimateChaptersPageCount(chapters, pageLayout)
   const goalNum = wordGoal ? Number(wordGoal) : null
 
   const setChapterBody = (html) => {
@@ -351,7 +349,6 @@ export default function Write() {
 
   const selectChapter = (i) => {
     setActiveChapter(i)
-    setMeasuredPages(null)
     setEditorKey(`ch-${chapters[i]?.id || i}-${Date.now()}`)
   }
 
@@ -592,8 +589,6 @@ export default function Write() {
               placeholder="Start writing this chapter…"
               className="flex-1"
               minHeightClass="min-h-[55vh]"
-              pageLayout={pageLayout}
-              onMeasuredPageCount={setMeasuredPages}
             />
           </div>
         </div>

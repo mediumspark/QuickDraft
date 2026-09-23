@@ -18,8 +18,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/components/ui/toast'
 import { FEEDBACK_VISIBILITY } from '@/data/writing'
 import { normalizeChapters } from '@/data/chapters'
-import { normalizePageLayout } from '@/data/pageLayout'
-import { PaginatedPageSurface } from '@/components/PaginatedPageSurface'
+import { normalizePageLayout, pageBoxStyle } from '@/data/pageLayout'
 import {
   getForumPost,
   getDraft,
@@ -439,6 +438,7 @@ export default function ForumPost() {
   )
   const useChapterMode = post.post_kind !== 'discussion' && chapters.length >= 1
   const renderedHtml = useChapterMode ? chapterHtml : htmlBody
+  const boxStyle = post.post_kind !== 'discussion' ? pageBoxStyle(pageLayout, 0.72) : undefined
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -542,67 +542,38 @@ export default function ForumPost() {
               <h2 className="text-xl font-semibold mb-3">{activeCh?.title || `Chapter ${chapterIndex + 1}`}</h2>
             )}
 
-            {post.post_kind !== 'discussion' ? (
-              <PaginatedPageSurface layout={pageLayout} scale={0.72} className="mb-2">
-                <div
-                  ref={bodyRef}
-                  onMouseUp={handleMouseUp}
-                  className="qd-prose font-document leading-relaxed select-text"
-                >
-                  {renderedHtml ? (
-                    <div dangerouslySetInnerHTML={{ __html: renderedHtml }} />
-                  ) : (
-                    <div className="whitespace-pre-wrap">
-                      {segments.map((seg, i) =>
-                        seg.type === 'mark' ? (
-                          <mark
-                            key={i}
-                            className={cn(
-                              'bg-accent cursor-pointer rounded-sm px-0.5',
-                              activeCommentId === seg.commentId && 'ring-2 ring-primary'
-                            )}
-                            onClick={() => setActiveCommentId(seg.commentId)}
-                          >
-                            {seg.value}
-                          </mark>
-                        ) : (
-                          <React.Fragment key={i}>{seg.value}</React.Fragment>
-                        )
-                      )}
-                    </div>
+            <div
+              ref={bodyRef}
+              onMouseUp={handleMouseUp}
+              className={cn(
+                'qd-prose font-document text-lg leading-relaxed select-text',
+                post.post_kind !== 'discussion' && 'mx-auto bg-[color-mix(in_oklab,var(--card)_92%,#f5f0e8)] shadow-md border border-black/10'
+              )}
+              style={boxStyle}
+            >
+              {renderedHtml ? (
+                <div dangerouslySetInnerHTML={{ __html: renderedHtml }} />
+              ) : (
+                <div className="whitespace-pre-wrap">
+                  {segments.map((seg, i) =>
+                    seg.type === 'mark' ? (
+                      <mark
+                        key={i}
+                        className={cn(
+                          'bg-accent cursor-pointer rounded-sm px-0.5',
+                          activeCommentId === seg.commentId && 'ring-2 ring-primary'
+                        )}
+                        onClick={() => setActiveCommentId(seg.commentId)}
+                      >
+                        {seg.value}
+                      </mark>
+                    ) : (
+                      <React.Fragment key={i}>{seg.value}</React.Fragment>
+                    )
                   )}
                 </div>
-              </PaginatedPageSurface>
-            ) : (
-              <div
-                ref={bodyRef}
-                onMouseUp={handleMouseUp}
-                className="qd-prose font-document text-lg leading-relaxed select-text"
-              >
-                {renderedHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: renderedHtml }} />
-                ) : (
-                  <div className="whitespace-pre-wrap">
-                    {segments.map((seg, i) =>
-                      seg.type === 'mark' ? (
-                        <mark
-                          key={i}
-                          className={cn(
-                            'bg-accent cursor-pointer rounded-sm px-0.5',
-                            activeCommentId === seg.commentId && 'ring-2 ring-primary'
-                          )}
-                          onClick={() => setActiveCommentId(seg.commentId)}
-                        >
-                          {seg.value}
-                        </mark>
-                      ) : (
-                        <React.Fragment key={i}>{seg.value}</React.Fragment>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
             {selectionDraft && allowSelection && (
               <div className="mt-6 rounded-lg border bg-card p-4 space-y-3">
